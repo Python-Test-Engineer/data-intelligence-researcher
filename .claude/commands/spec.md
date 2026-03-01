@@ -1,67 +1,181 @@
 ---
-description: Create a feature spec file and branch from a short idea
-argument-hint: Short feature description
-allowed-tools: Read, Write, Glob, Bash(git switch:*)
+description: "Translate a research plan from _plans/ into a detailed Python technical spec. Usage: /spec _plans/<filename>"
+argument-hint: "_plans/<filename>.md"
+allowed-tools: Read, Glob, Write, Edit, AskUserQuestion
 ---
 
-You are helping to spin up a new feature spec for this application, from a short idea provided in the user input below. Always adhere to any rules or requirements set out in any CLAUDE.md files when responding.
+**Argument required:** The path to a plan file inside `_plans/`, e.g. `/spec _plans/neuroblastoma_survival.md`
 
-User input: $ARGUMENTS
+If no argument was provided, list available plan files and ask the user which to use:
 
-## High level behavior
+```
+Glob: _plans/**/*.md
+```
 
-Your job will be to turn the user input above into:
+Then stop and ask the user to re-run with the correct file.
 
-- A human friendly feature title in kebab-case (e.g. new-heist-form)
-- A safe git branch name not already taken (e.g. claude/feature/new-heist-form)
-- A detailed markdown spec file under the _specs/ directory
+---
 
-Then save the spec file to disk and print a short summary of what you did.
+## Your role
 
-## Step 1. Check the current branch
+You are an experienced data scientist and oncological researcher acting as a Python software architect. Your job is to translate the research plan into a precise, implementation-ready technical spec that a developer (or `/execute`) can follow without ambiguity.
 
-Check the current Git branch, and abort this entire process if there are any uncommitted, unstaged, or untracked files in the working directory. Tell the user to commit or stash changes before proceeding, and DO NOT GO ANY FURTHER.
+Do **not** write actual code. Write intent, contracts, and structure.
 
-## Step 2. Parse the arguments
+---
 
-From `$ARGUMENTS`, extract:
+## Step 1 — Read the plan file
 
-1. `feature_title`  
-   - A short, human readable title in Title Case.  
-   - Example: "Card Component for Dashboard Stats".
+Read `$ARGUMENTS` in full. Understand:
+- The research question and success criteria
+- The dataset(s) and their column contracts (names, types, semantics)
+- The proposed phases (EDA, feature engineering, modelling, reporting)
+- Any open questions or constraints noted in the plan
 
-2. `feature_slug`  
-   - A git safe slug.  
-   - Rules:  
-     - Lowercase 
-     - Kebab-case 
-     - Only `a-z`, `0-9` and `-`  
-     - Replace spaces and punctuation with `-`  
-     - Collapse multiple `-` into one  
-     - Trim `-` from start and end  
-     - Maximum length 40 characters  
-   - Example: `card-component` or `card-component-dashboard`.
+Also read `data/` to confirm dataset filenames if referenced.
 
-3. `branch_name`  
-   - Format: `claude/feature/<feature_slug>`  
-   - Example: `claude/feature/card-component`.
+---
 
-If you cannot infer a sensible `feature_title` and `feature_slug`, ask the user to clarify instead of guessing.
+## Step 2 — Determine the output directory
 
-## Step 3. Switch to a new Git branch
+List existing `output/PROJECT_*` folders to find the next project number, e.g. if `PROJECT_01` and `PROJECT_02` exist, the new one is `PROJECT_03`.
 
-Before making any content, switch to a new Git branch using the `branch_name` derived from the `$ARGUMENTS`. If the branch name is already taken, then append a version number to it: e.g. `claude/feature/card-component-01`
+Record this as `output_dir = output/PROJECT_XX`.
 
-## Step 4. Draft the spec content
+---
 
-Create a markdown spec document that Plan mode can use directly and save it in the _specs folder using the `feature_slug`. Use the exact structure as defined in the spec template file here: @_specs/template.md. Do not add technical implementation details such as code examples.
+## Step 3 — Ask clarifying questions
 
-## Step 5. Final output to the user
+Before writing the spec, use `AskUserQuestion` to resolve any remaining ambiguities not settled in the plan, for example:
 
-After the file is saved, respond to the user with a short summary in this exact format:
+- Which ML framework is preferred (scikit-learn, XGBoost, PyTorch, lifelines)?
+- Should models be persisted to disk?
+- Is reproducibility via a fixed random seed required?
+- Should the spec cover a single monolithic script or multiple phase scripts?
+- Are there runtime or memory constraints?
 
-Branch: <branch_name>
-Spec file: specs/<feature_slug>.md
-Title: <feature_title>
+Only ask if genuinely unclear from the plan.
 
-Do not repeat the full spec in the chat output unless the user explicitly asks to see it. The main goal is to save the spec file and report where it lives and what branch name to use.
+---
+
+## Step 4 — Write the spec
+
+Save the completed spec to `_specs/<plan-filename>` (same stem, `.md` extension).
+
+Use this structure:
+
+```markdown
+# Technical Spec — <short title>
+
+**Plan source:** _plans/<filename>
+**Dataset(s):** data/<filename(s)>
+**Output directory:** output/PROJECT_XX/
+**Date:** <today>
+
+## 1. Overview
+One paragraph: what this code does and what it produces.
+
+## 2. Environment
+- Python 3.12 via `uv`
+- Dependencies to add with `uv add`: <list packages>
+
+## 3. Script Architecture
+| Script | Location | Responsibility |
+|--------|----------|----------------|
+| phase1_eda.py | src/ | Load data, profile, produce EDA plots and dirty.csv |
+| phase2_features.py | src/ | Feature engineering, produce cleaned dataset |
+| phase3_model.py | src/ | Train, evaluate, and persist model |
+| phase4_report.py | src/ | Aggregate results into a final report |
+
+One script per phase unless the plan specifies otherwise.
+
+## 4. Data Contract
+
+### Input
+| Column | Type | Description | Nullable |
+|--------|------|-------------|----------|
+| ...    | ...  | ...         | ...      |
+
+### Dirty-row rules
+Rows are removed (not fixed) and saved to `output/PROJECT_XX/dirty.csv` when:
+- <list each rule>
+
+### Output files
+| File | Description |
+|------|-------------|
+| output/PROJECT_XX/dirty.csv | Removed rows with reason column |
+| output/PROJECT_XX/eda_*.png | EDA plots |
+| output/PROJECT_XX/model.pkl | Serialised model (if applicable) |
+| output/PROJECT_XX/report.txt | Final summary report |
+
+## 5. Phase Specs
+
+### Phase 1 — EDA & Preprocessing (`src/phase1_eda.py`)
+**Inputs:** `data/<filename>`
+**Outputs:** `output/PROJECT_XX/dirty.csv`, `output/PROJECT_XX/eda_*.png`
+
+Steps:
+1. Load dataset; assert expected columns exist
+2. Identify dirty rows per dirty-row rules; write to dirty.csv with a `reason` column
+3. Drop dirty rows from working dataframe
+4. Plot distributions for all numeric columns (histogram + KDE)
+5. Plot class balance for target column
+6. Plot correlation heatmap
+7. Print a summary table (shape, missing %, dtype)
+
+### Phase 2 — Feature Engineering (`src/phase2_features.py`)
+**Inputs:** clean dataframe from Phase 1
+**Outputs:** `output/PROJECT_XX/features.parquet`
+
+Steps:
+1. <specific transformations from the plan>
+2. Encode categoricals: <strategy>
+3. Scale numerics: <strategy>
+4. Save engineered feature matrix
+
+### Phase 3 — Modelling (`src/phase3_model.py`)
+**Inputs:** `output/PROJECT_XX/features.parquet`
+**Outputs:** `output/PROJECT_XX/model.pkl`, `output/PROJECT_XX/metrics.json`
+
+Steps:
+1. Split data: <strategy, e.g. 80/20 stratified, or cross-validation scheme>
+2. Train: <algorithm(s), hyperparameter ranges>
+3. Evaluate: <metrics — AUROC, C-index, etc.>
+4. Persist model and metrics
+
+### Phase 4 — Reporting (`src/phase4_report.py`)
+**Inputs:** `output/PROJECT_XX/metrics.json`, plots
+**Outputs:** `output/PROJECT_XX/report.txt`
+
+Steps:
+1. Load metrics
+2. Render a plain-text summary report with all key results
+3. Print report to stdout and save to file
+
+## 6. Reproducibility
+- Random seed: `RANDOM_SEED = 42` defined at top of each script
+- All scripts must be runnable independently in phase order
+
+## 7. Error Handling
+- Raise a clear `ValueError` if a required input file is missing
+- Log warnings (not errors) for unexpected but non-fatal column issues
+
+## 8. Run Order
+```bash
+uv run python src/phase1_eda.py
+uv run python src/phase2_features.py
+uv run python src/phase3_model.py
+uv run python src/phase4_report.py
+```
+```
+
+---
+
+## Step 5 — Confirm with the researcher
+
+After saving the spec, present a short summary:
+- Scripts to be written and their responsibilities
+- Key design decisions made (algorithm choice, metric, split strategy)
+- Output files that will be produced
+
+Then ask: "Does this spec look correct, or would you like to adjust anything before moving to `/execute`?"

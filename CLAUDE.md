@@ -1,56 +1,51 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
 ## Rules
 
-- Use `src/` for all scripts created; use `output/` for all generated files (plots, CSVs, text reports).
+- All scripts go in `src/`; all generated files (plots, CSVs, reports) go in `output/PROJECT_XX/`.
 - Always use `uv` and Python 3.12.
-- If any data row is not cleanable, DO NOT fix it — remove the row and save it to `output/dirty.csv`.
-- Always ask questions to ensure full understanding before implementing.
-- results from running code are stored in `outputs` with a subfolder `PROJECT_0X` where the X is the next number e.g. `PROJECT_03`, `PROJECT_04` etc
+- Dirty rows must be **removed, never fixed**, and saved to `output/PROJECT_XX/dirty.csv` with a `reason` column.
+- Output subfolders are named `PROJECT_01`, `PROJECT_02`, etc. — always use the next available number.
 
-## Commands
+## Shell Commands
 
 ```bash
-# Run a script
-uv run python src/phase1_eda.py
-
-# Add a dependency
-uv add <package>
-
-# Install all dependencies from lockfile
-uv sync
+uv run python src/<script>.py   # run a script
+uv add <package>                # add a dependency
+uv sync                         # install from lockfile
 ```
 
 ## Project: Neuroblastoma Genomic Analysis
 
-This is a multi-phase oncology data science project predicting neuroblastoma patient outcomes from gene expression and clinical data.
+Multi-phase oncology data science project predicting neuroblastoma patient outcomes from gene expression and clinical data.
 
-### Datasets (`data/`)
+## Directory Layout
 
+```
+_ideas/      Researcher idea files (input to /plan)
+_plans/      Research plans (output of /plan, input to /spec)
+_specs/      Technical specs (output of /spec, input to /execute)
+src/         Python scripts (written by /execute)
+data/        Raw datasets (read-only)
+output/      All generated outputs, one subfolder per project run
+```
 
-Data sets are stored here.
+## Workflow
 
+**Phase 1 — Plan**
+```
+/plan _ideas/<filename>
+```
+Reads the idea file, profiles the dataset, asks clarifying questions, and saves a structured research plan to `_plans/<filename>`.
 
-### Process
+**Phase 2 — Spec**
+```
+/spec _plans/<filename>
+```
+Translates the plan into a detailed Python technical spec (scripts, data contracts, output files) and saves it to `_specs/<filename>`.
 
-Researchers store their `ideas` of what they want in `_ideas`.
-
-Phase 1: 
-
-`/plan [_ideas/<filename>]`
-
-Create a detailed plan based on the chosen idea and ensure you ask questions so that you fully understand what is required.
-
-Phase 2: 
-
-`/spec [_plan<filename>]`
-
-You create a technical spec of code that will be written This follows best practices for Python.
-
-This is stored in `_specs/<filename>`
-
-Phase 3: You execute the code produced by implementing the spec.
-
-`/execute-spec [_spec/<filename>]`
+**Phase 3 — Execute**
+```
+/execute _specs/<filename>
+```
+Implements every script in the spec, runs them in phase order, fixes errors, and validates all outputs in `output/PROJECT_XX/`.

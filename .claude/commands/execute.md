@@ -1,67 +1,133 @@
 ---
-description: Create a feature spec file and branch from a short idea
-argument-hint: Short feature description
-allowed-tools: Read, Write, Glob, Bash(git switch:*)
+description: "Implement and run all scripts defined in a technical spec from _specs/. Usage: /execute _specs/<filename>"
+argument-hint: "_specs/<filename>.md"
+allowed-tools: Read, Glob, Grep, Write, Edit, Bash(uv run python *), Bash(uv add *), Bash(uv sync), Bash(mkdir *), Bash(git diff), Bash(git diff --staged), AskUserQuestion
 ---
 
-You are helping to spin up a new feature spec for this application, from a short idea provided in the user input below. Always adhere to any rules or requirements set out in any CLAUDE.md files when responding.
+**Argument required:** The path to a spec file inside `_specs/`, e.g. `/execute _specs/neuroblastoma_survival.md`
 
-User input: $ARGUMENTS
+If no argument was provided, list available spec files and ask the user which to use:
 
-## High level behavior
+```
+Glob: _specs/**/*.md
+```
 
-Your job will be to turn the user input above into:
+Then stop and ask the user to re-run with the correct file.
 
-- A human friendly feature title in kebab-case (e.g. new-heist-form)
-- A safe git branch name not already taken (e.g. claude/feature/new-heist-form)
-- A detailed markdown spec file under the _specs/ directory
+---
 
-Then save the spec file to disk and print a short summary of what you did.
+## Your role
 
-## Step 1. Check the current branch
+You are an experienced data scientist and oncological researcher implementing production-quality Python analysis code. Your job is to faithfully implement every script defined in the spec, run them in order, fix any errors, and deliver clean outputs.
 
-Check the current Git branch, and abort this entire process if there are any uncommitted, unstaged, or untracked files in the working directory. Tell the user to commit or stash changes before proceeding, and DO NOT GO ANY FURTHER.
+Follow the spec precisely. Do not add features or scripts not described in it.
 
-## Step 2. Parse the arguments
+---
 
-From `$ARGUMENTS`, extract:
+## Step 1 — Read the spec
 
-1. `feature_title`  
-   - A short, human readable title in Title Case.  
-   - Example: "Card Component for Dashboard Stats".
+Read `$ARGUMENTS` in full. Note:
+- All script filenames and their locations (always `src/`)
+- The output directory (`output/PROJECT_XX/`)
+- The data contract: input columns, dirty-row rules, output files
+- The run order
+- Any dependencies to install
 
-2. `feature_slug`  
-   - A git safe slug.  
-   - Rules:  
-     - Lowercase 
-     - Kebab-case 
-     - Only `a-z`, `0-9` and `-`  
-     - Replace spaces and punctuation with `-`  
-     - Collapse multiple `-` into one  
-     - Trim `-` from start and end  
-     - Maximum length 40 characters  
-   - Example: `card-component` or `card-component-dashboard`.
+Also read the plan file referenced in the spec for additional context on intent.
 
-3. `branch_name`  
-   - Format: `claude/feature/<feature_slug>`  
-   - Example: `claude/feature/card-component`.
+---
 
-If you cannot infer a sensible `feature_title` and `feature_slug`, ask the user to clarify instead of guessing.
+## Step 2 — Prepare the environment
 
-## Step 3. Switch to a new Git branch
+1. Create the output directory if it does not exist:
+   ```bash
+   mkdir -p output/PROJECT_XX
+   ```
+2. Install any dependencies listed in the spec:
+   ```bash
+   uv add <packages>
+   ```
+3. Confirm the input dataset(s) exist in `data/`. If any are missing, stop and tell the user.
 
-Before making any content, switch to a new Git branch using the `branch_name` derived from the `$ARGUMENTS`. If the branch name is already taken, then append a version number to it: e.g. `claude/feature/card-component-01`
+---
 
-## Step 4. Draft the spec content
+## Step 3 — Implement each script
 
-Create a markdown spec document that Plan mode can use directly and save it in the _specs folder using the `feature_slug`. Use the exact structure as defined in the spec template file here: @_specs/template.md. Do not add technical implementation details such as code examples.
+For each script defined in the spec, in phase order:
 
-## Step 5. Final output to the user
+### Writing rules
+- Save to `src/<script_name>.py`
+- Use Python 3.12 features where appropriate
+- Define `RANDOM_SEED = 42` and `OUTPUT_DIR = Path("output/PROJECT_XX")` at the top
+- Use `pathlib.Path` for all file paths — never string concatenation
+- Follow the data contract exactly: same column names, same dirty-row rules
+- Dirty rows must be removed (never fixed) and appended to `OUTPUT_DIR / "dirty.csv"` with a `reason` column
+- All plots saved to `OUTPUT_DIR` as `.png`; never use `plt.show()`
+- Print progress to stdout with clear section headers so runs are easy to follow
+- Keep each script runnable standalone (no imports between phase scripts)
 
-After the file is saved, respond to the user with a short summary in this exact format:
+### Code quality
+- No magic numbers — use named constants
+- Each logical step in its own function
+- Use type hints on all function signatures
+- No bare `except:` — catch specific exceptions
 
-Branch: <branch_name>
-Spec file: specs/<feature_slug>.md
-Title: <feature_title>
+---
 
-Do not repeat the full spec in the chat output unless the user explicitly asks to see it. The main goal is to save the spec file and report where it lives and what branch name to use.
+## Step 4 — Run each script and fix errors
+
+After writing each script, immediately run it:
+
+```bash
+uv run python src/phase1_eda.py
+```
+
+If the run fails:
+1. Read the full traceback carefully
+2. Fix the root cause in the source file
+3. Re-run — do not move to the next phase until this one passes
+4. Do not retry the same failing command more than twice without changing the approach; instead, diagnose and try a different fix
+
+Repeat for each subsequent phase script.
+
+---
+
+## Step 5 — Validate outputs
+
+After all scripts have run successfully, verify:
+- `output/PROJECT_XX/dirty.csv` exists (even if empty — zero dirty rows is valid)
+- All plot files listed in the spec exist in `output/PROJECT_XX/`
+- `output/PROJECT_XX/report.txt` (or equivalent final output) exists and is non-empty
+- `output/PROJECT_XX/metrics.json` exists if the spec requires it
+
+If any expected output is missing, investigate and fix the relevant script.
+
+---
+
+## Step 6 — Final summary
+
+Report to the user:
+
+```
+Done. Scripts written and executed:
+
+  src/phase1_eda.py       — OK
+  src/phase2_features.py  — OK
+  src/phase3_model.py     — OK
+  src/phase4_report.py    — OK
+
+Output directory: output/PROJECT_XX/
+
+Files produced:
+  dirty.csv          — X rows removed
+  eda_*.png          — N plots
+  features.parquet   — shape (R, C)
+  model.pkl          — <algorithm>
+  metrics.json       — AUROC: 0.XX, ...
+  report.txt         — see below
+
+--- report.txt ---
+<print the contents of report.txt here>
+```
+
+If anything did not work as expected, describe the issue and what was done to mitigate it.

@@ -1,7 +1,7 @@
 [project]
-name = "claude-code-app"
+name = "neuroblastoma-genomic-analysis"
 version = "0.1.0"
-description = "Add your description here"
+description = "Multi-phase oncology data science project predicting neuroblastoma patient outcomes from gene expression and clinical data."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -9,7 +9,9 @@ dependencies = [
     "matplotlib>=3.10.8",
     "numpy>=2.4.2",
     "pandas>=3.0.1",
+    "scikit-learn>=1.6.0",
     "scipy>=1.17.1",
     "seaborn>=0.13.2",
     "statsmodels>=0.14.6",
+    "xgboost>=2.1.0",
 ]

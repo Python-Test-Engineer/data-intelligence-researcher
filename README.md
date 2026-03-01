@@ -1,71 +1,91 @@
-# Agentic Data Analysis
+# Agentic ML Template
 
-## Optional setup
+A structured template for AI-assisted oncology data science using Claude Code. Drop in a dataset, describe what you want to analyse, and follow a three-phase workflow — Claude handles the profiling, planning, coding, and execution.
 
-run `uv sync` to load in Python etc.
+---
 
-run `.\.venv\Scripts\activate` to activate virtual environment
+## Prerequisites
 
-NB - Claude can do this so if this is not done it may not matter. Just ask 'set UV environment and sync'
+- [Claude Code](https://claude.ai/code) installed and authenticated
+- [uv](https://docs.astral.sh/uv/) installed (`pip install uv` or see uv docs)
 
-## Folders
+---
 
-The _ideas folder is just where you write a little brain dump of what you just want to do, any of your thoughts. It's just used to help; it doesn't have to be specific or well structured. 
+## Setup
 
-The _plans folder is where, when we run our command for planning, the report will be placed. That will explain:
-- what it thinks the data set is about
-- the questions it wants to ask
-- what it will plan to do
-- what AI/ML analysis it will do
+```bash
+uv sync
+```
 
-Then, in the _specs, when we run the SPEC command, it will form the actual technical requirements, the code implications, what data cleaning would do, all the very specifics. Later, when we run the SPEC command, the EXECUTE command, it will actually build the code based on that specification. 
+That's it. Claude will install any additional packages it needs automatically as it works.
 
+---
+
+## Workflow
+
+The project follows three phases, each driven by a slash command.
+
+### Phase 1 — Plan
+```
+/plan _ideas/<filename>
+```
+Write a short idea file in `_ideas/` describing what you want to explore — it can be rough notes, bullet points, or a few sentences. Claude will read it, profile the dataset, ask any clarifying questions, and produce a structured research plan in `_plans/`.
+
+### Phase 2 — Spec
+```
+/spec _plans/<filename>
+```
+Claude reads the plan and writes a detailed technical spec in `_specs/` — covering script architecture, data contracts, dirty-row rules, output files, and the exact run order. Review this before proceeding; it is the contract for what gets built.
+
+### Phase 3 — Execute
+```
+/execute _specs/<filename>
+```
+Claude implements all scripts from the spec into `src/`, runs them in order, fixes any errors, and validates that all expected outputs exist in `output/PROJECT_XX/`.
+
+---
+
+## Directory Layout
+
+```
+_ideas/      Your research ideas (input to /plan)
+_plans/      Research plans produced by /plan (input to /spec)
+_specs/      Technical specs produced by /spec (input to /execute)
+src/         Python scripts written by /execute
+data/        Raw datasets — gitignored, never modified
+output/      All generated outputs (plots, CSVs, reports)
+  PROJECT_01/
+  PROJECT_02/
+  ...
+.claude/
+  commands/  Slash command definitions (/plan, /spec, /execute)
+  agents/    Specialist sub-agents (e.g. code-quality-reviewer)
+```
+
+---
 
 ## Datasets
 
-All datasets are stored in the data folder, and you can use the @ symbol to reference them. 
+Place datasets in the `data/` folder. They are **gitignored** — never committed to the repo.
 
-These are **GITIGNORED** as they will be too large and for security.
+Reference a dataset in your idea file by filename, e.g. `data/neuroblastoma.csv`. Claude will locate and profile it automatically during the plan phase.
 
-However, it may be best practice To download them when you work on a project, then delete them or upload them back as necessary. 
-
+---
 
 ## Output
 
-And the output of running the code will be stored in the output folder, and the code formed by the specifications and the execute stage will be stored in the SRC folder. 
+Each project run writes to its own subfolder: `output/PROJECT_01`, `output/PROJECT_02`, etc. The next available number is always used automatically.
 
-## .claude
+Every run produces at minimum:
+- `dirty.csv` — rows removed during cleaning, with a `reason` column
+- Plot files (`.png`)
+- A plain-text `report.txt` summarising results
 
-If we look in the.claude folder, we see there's a folder for agents which run in their own context and unit. 
+---
 
-### Agents
+## Tips
 
-If we use any specialist agents or sub-agents that work in their own context, these are stored in the agents folder, and we can specify specialist agents to do things like code review, image analysis, etc. 
-
-### Commands
-
-We have a folder for commands. This is used where we do /login, etc. We can make our custom commands based on the file name. We'll have a file name, should we say, called execute.md. If we do /execute and pass in an argument, it will run that particular command for us, which we've described in that file. 
-
-### Skills
-
-The skills folder is similar to commands, but it is actually determined by the CLAUDE code itself, whereas the commands are very specific when instructing it. Skills contains a lot of different files with different sets of skills and capabilities that are like tools that CLAUDE can then draw upon as needed. 
-
-## UV
-
-The repo is set up with uv, which is the modern standard now, rather than pip install. It has all the files loaded when you first go in. You may run the commands specified in the README.md to activate the environment, but if not, CLAUDE actually understands all of this. It's got it in its CLAUDE.md file, which is basically setting up the information for it so it knows what this project's about, and it updates itself so that it can better perform.
-
-You won't really need to do anything; you just give it commands and it will then have all the Python it needs within it and will add libraries as needed, because effectively it can write Python code and execute Python code through its agents. If it doesn't have anything, it just installs and sets it up. It can, in fact, even install uv and all of that for us, but it's already in this template. 
-
-## General 
-
-Commands you may need are:
-- /login to login
-- /init to initialise a repo or update CLAUDE.md
-
-The most important is once you're logged in, if you're unsure about anything, you can ask Claude to do it or what to do. 
-
-Remember that you can take screenshots and add them in. You can copy and paste them into the terminal, or if you've got them saved as a file in the folder using the Act reference, you can reference them. Then it can see exactly what's going on, so you can ask it questions on that if there's something that you're finding hard to explain. 
-
-## Pro Tip
-
-*Just ask as you would ask any expert.*
+- **Rough ideas are fine.** The idea file does not need to be structured — a few sentences or bullet points are enough for `/plan` to work with.
+- **Review the spec before executing.** The spec phase is your chance to catch misunderstandings before any code is written.
+- **Use screenshots.** Paste an image directly into the Claude Code terminal, or reference a saved file with `@filename`. Claude can read charts, error messages, and UI screenshots to help diagnose issues.
+- **Just ask.** If you are unsure what to do at any point, describe the situation in plain language and Claude will advise.

@@ -7,7 +7,16 @@ wheels/
 *.egg-info
 
 # Virtual environments
-.venv
+.venv/
 
-# data
+# data (too large and may contain patient data)
 data/
+
+# local Claude Code permissions — each user maintains their own
+.claude/settings.local.json
+
+# tests
+
+.pytest_cache/
+coverage.xml
+htmlcov/
