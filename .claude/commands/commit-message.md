@@ -1,6 +1,6 @@
 ---
 description: Create a commit message by analyzing git diffs
-allowed-tools: Bash(git status), Bash(git status --short), Bash(git diff --staged), Bash(git add *), Bash(git commit:*)
+allowed-tools: Bash(git status), Bash(git status --short), Bash(git diff --staged), Bash(git add *), Bash(git commit:*), Bash(git push origin main)
 ---
 
 ## Context:
@@ -46,5 +46,7 @@ Use the following format for making the commit message:
 1. Show summary of changes currently staged
 2. Propose commit message with appropriate emoji
 3. Ask for confirmation before committing
+4. After a successful commit, ask: "Would you like to push to origin main?"
+5. If yes, run `git push origin main`. If no, stop.
 
-DO NOT auto-commit - wait for user approval, and only commit if the user says so.
+DO NOT auto-commit or auto-push - always wait for user approval at each step.
