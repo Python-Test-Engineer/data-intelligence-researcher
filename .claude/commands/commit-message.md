@@ -50,3 +50,5 @@ Use the following format for making the commit message:
 5. If yes, run `git push origin main`. If no, stop.
 
 DO NOT auto-commit or auto-push - always wait for user approval at each step.
+
+This is VERY IMPORTANT
