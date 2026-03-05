@@ -162,7 +162,7 @@ def _run_investigation(interval: float = 1.0) -> None:
 
     console.print(
         Panel(
-            f"[bold white]🕵️  The Data Science Detective Agency[/]\n"
+            f"[bold white]🕵️ The Data Science Detective Agency[/]\n"
             f"[dim]Generating investigation plan — messages stream every {interval:.0f} s[/]",
             style="on dark_blue",
             border_style="bright_blue",
@@ -592,7 +592,7 @@ app_ui = ui.page_fluid(
                         started = true;
                         clearInterval(iv);
                         var sel = document.getElementById('interval');
-                        if (sel) { sel.value = '2'; sel.dispatchEvent(new Event('change')); }
+                        if (sel) { sel.value = '1'; sel.dispatchEvent(new Event('change')); }
                         btn.click();
                     }
                 }, 200);
@@ -667,7 +667,7 @@ app_ui = ui.page_fluid(
     """
     ),
     ui.div(
-        ui.tags.h2("🕵️ Data Science Detective Agency"),
+        ui.tags.h2("🕵️ The Data Science Detective Agency"),
         ui.tags.p(
             "Lesson 01: Multi-Agent Collaboration — Watch sub-agents solve a mystery dataset together"
         ),
@@ -873,7 +873,7 @@ if __name__ == "__main__":
 
     console.print(
         Panel(
-            "[bold white]🕵️  Data Science Detective Agency[/]\n"
+            "[bold white]🕵️  The Data Science Detective Agency[/]\n"
             "[dim]Lesson 01: Multi-Agent Collaboration[/]\n\n"
             "[bright_blue]http://127.0.0.1:8000[/]  ← open in browser\n"
             "[dim]Click [bold]▶ Start Investigation[/dim] to begin",

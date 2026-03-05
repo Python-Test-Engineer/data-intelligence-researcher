@@ -16,7 +16,7 @@ Once it reaches full page in size it fades out to scene 2
 
 ### Scene 2
 
-The app `src\lesson01_app.py` appears and the user and the START sequence with default 2 seconds of message delay is activated.
+The app `src\lesson01_app.py` appears and the user and the START sequence with default 1 seconds of message delay is activated.
 
 ### Scene 3
 
