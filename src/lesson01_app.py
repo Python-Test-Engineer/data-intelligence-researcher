@@ -570,36 +570,16 @@ app_ui = ui.page_fluid(
     ui.tags.script(
         """
         (function() {
-            // Autostart when arriving from Scene 1
-            var p = new URLSearchParams(window.location.search);
-            if (p.get('autostart') === '1') {
-                var started = false;
-                var iv = setInterval(function() {
-                    if (started) { clearInterval(iv); return; }
-                    var btn = document.getElementById('start_btn');
-                    if (btn && btn.classList.contains('shiny-bound-input')) {
-                        started = true;
-                        clearInterval(iv);
-                        var sel = document.getElementById('interval');
-                        if (sel) { sel.value = '1'; sel.dispatchEvent(new Event('change')); }
-                        btn.click();
-                    }
-                }, 200);
-            }
-
-            // Watch for the results panel, scroll to it, then go to credits
-            var credited = false;
+            // Watch for the results panel and scroll to it
+            var scrolled = false;
             var observer = new MutationObserver(function() {
-                if (credited) return;
+                if (scrolled) return;
                 if (!document.querySelector('.results-panel')) return;
-                credited = true;
+                scrolled = true;
                 observer.disconnect();
                 setTimeout(function() {
                     window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
                 }, 200);
-                setTimeout(function() {
-                    window.location.href = 'http://127.0.0.1:8002/';
-                }, 3200);
             });
             observer.observe(document.body, { childList: true, subtree: true });
         })();
