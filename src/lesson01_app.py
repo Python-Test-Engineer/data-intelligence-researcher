@@ -650,6 +650,9 @@ app_ui = ui.page_fluid(
             font-weight: bold !important; font-size: 1.1em !important;
             padding: 10px 24px !important; border-radius: 8px !important;
             border: none !important; cursor: pointer !important;
+        }
+        .toolbar-row .shiny-input-container {
+            margin-bottom: 0 !important;
             margin-left: 10px !important;
         }
     """
@@ -664,24 +667,22 @@ app_ui = ui.page_fluid(
     ui.div(
         ui.input_action_button("start_btn", "▶ Start Investigation", class_="start-btn"),
         ui.input_action_button("clear_btn", "✕ Clear", class_="clear-btn"),
-        ui.tags.span(
-            ui.input_select(
-                "interval",
-                None,
-                choices={
-                    "1": "1 s / message",
-                    "2": "2 s / message",
-                    "3": "3 s / message",
-                    "4": "4 s / message",
-                    "5": "5 s / message",
-                },
-                selected="1",
-                width="140px",
-            ),
-            style="display:inline-block;vertical-align:middle;margin-left:14px;",
+        ui.input_select(
+            "interval",
+            None,
+            choices={
+                "1": "1 s / message",
+                "2": "2 s / message",
+                "3": "3 s / message",
+                "4": "4 s / message",
+                "5": "5 s / message",
+            },
+            selected="1",
+            width="140px",
         ),
         ui.output_text("status_text"),
-        style="padding: 0 16px 16px; display:flex; align-items:center; gap:0;",
+        class_="toolbar-row",
+        style="padding: 0 16px 16px; display:flex; align-items:center; gap:12px;",
     ),
     ui.layout_columns(
         ui.div(
@@ -785,9 +786,9 @@ def app_server(input, output, session):
     def status_text():
         clock()
         if _still_running():
-            return "   ⚡ Investigation in progress..."
+            return "⚡ Investigation in progress..."
         if _is_complete():
-            return "   ✅ Investigation complete!"
+            return "✅ Investigation complete!"
         return ""
 
     @output
