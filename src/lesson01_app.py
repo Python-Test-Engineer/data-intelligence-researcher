@@ -416,6 +416,19 @@ def _agent_status_card(agent: str, status: str) -> ui.Tag:
 
 app_ui = ui.page_fluid(
     ui.busy_indicators.use(spinners=False, pulse=False, fade=False),
+    ui.tags.script("""
+        (function() {
+            var p = new URLSearchParams(window.location.search);
+            if (p.get('autostart') === '1') {
+                var iv = setInterval(function() {
+                    var sel = document.getElementById('interval');
+                    if (sel) { sel.value = '2'; sel.dispatchEvent(new Event('change')); }
+                    var btn = document.getElementById('start_btn');
+                    if (btn) { btn.click(); clearInterval(iv); }
+                }, 300);
+            }
+        })();
+    """),
     ui.tags.style("""
         body { background: #F0F2F5; font-family: 'Segoe UI', sans-serif; }
         /* Suppress Shiny's recalculating fade */
