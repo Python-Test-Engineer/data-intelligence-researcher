@@ -570,6 +570,26 @@ app_ui = ui.page_fluid(
     ui.tags.script(
         """
         (function() {
+            var p = new URLSearchParams(window.location.search);
+            if (p.get('autostart') !== '1') return;
+            var started = false;
+            var iv = setInterval(function() {
+                if (started) { clearInterval(iv); return; }
+                var btn = document.getElementById('start_btn');
+                if (btn && btn.classList.contains('shiny-bound-input')) {
+                    started = true;
+                    clearInterval(iv);
+                    var sel = document.getElementById('interval');
+                    if (sel) { sel.value = '1'; sel.dispatchEvent(new Event('change')); }
+                    btn.click();
+                }
+            }, 200);
+        })();
+    """
+    ),
+    ui.tags.script(
+        """
+        (function() {
             // Watch for the results panel and scroll to it
             var scrolled = false;
             var observer = new MutationObserver(function() {
@@ -779,6 +799,17 @@ def app_server(input, output, session):
         report_html = markdown2.markdown(_results.get("report", ""))
         fig_html = _results["fig"].to_html(full_html=False, include_plotlyjs="cdn")
         return ui.div(
+            ui.tags.script(
+                """
+                (function() {
+                    if (window._creditsScheduled) return;
+                    window._creditsScheduled = true;
+                    setTimeout(function() {
+                        window.location.href = 'http://127.0.0.1:8002/';
+                    }, 30000);
+                })();
+                """
+            ),
             ui.div("📊 Investigation Results", class_="panel-title", style="font-size:1.1em;"),
             ui.layout_columns(
                 ui.div(ui.HTML(fig_html)),
