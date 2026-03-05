@@ -144,8 +144,10 @@ def _run_investigation(interval: float = 1.0) -> None:
     sched: list[tuple[float, str, str]] = []
     delay = 0.0
 
+    first_msg = True  # first SYSTEM message gets no delay
+
     def emit(msg: AgentMessage) -> None:
-        nonlocal delay
+        nonlocal delay, first_msg
         msg.display_after = t0 + delay
         msgs.append(msg)
         style, label = MSG_STYLE.get(msg.msg_type, ("white", msg.msg_type.upper()))
@@ -154,7 +156,10 @@ def _run_investigation(interval: float = 1.0) -> None:
             f"  [dim]+{delay:5.1f}s[/]  [{sender_color}]{AGENT_ICONS.get(msg.sender,'🤖')} {msg.sender:<12}[/]"
             f"[dim]→ {msg.recipient:<12}[/]  [{style}]{label}[/]  [white]{msg.content}[/]"
         )
-        delay += interval
+        if first_msg:
+            first_msg = False  # no interval gap after the very first message
+        else:
+            delay += interval
 
     def state_now(agent: str, state: str) -> None:
         sched.append((t0 + delay, agent, state))
@@ -300,16 +305,19 @@ def _run_investigation(interval: float = 1.0) -> None:
     emit(AgentMessage("Manager",  "ALL",
          "All agents have completed their tasks. Investigation closed! 🎉", "complete"))
 
+    # Report appears as soon as the last message does (no extra interval gap)
+    last_display = msgs[-1].display_after
+
     # Commit to shared state
     _message_log    = msgs
     _state_schedule = sched
     _results["fig"]    = fig
     _results["report"] = report_text
-    _done_after = t0 + delay
+    _done_after = last_display
 
     console.print(Panel(
         f"[bold green]✅ Plan complete![/]  {len(msgs)} messages scheduled over {delay:.0f} s\n"
-        f"[dim]Results will appear in browser after the final message at +{delay-1:.0f}s[/]",
+        f"[dim]Report appears alongside final message at +{delay:.0f}s[/]",
         style="on dark_green", border_style="green"
     ))
 
@@ -628,6 +636,10 @@ def app_server(input, output, session):
             return
         _started = True
         _run_investigation(float(input.interval()))
+        # Force immediate render so first message (delay=0) shows right away
+        # without waiting up to N seconds for the next tick.
+        with reactive.isolate():
+            clock.set(clock() + 1)
 
     @reactive.effect
     @reactive.event(input.clear_btn)
