@@ -7,6 +7,7 @@ requires-python = ">=3.12"
 dependencies = [
     "anthropic>=0.84.0",
     "fpdf2>=2.8.7",
+    "kaleido>=1.2.0",
     "lifelines>=0.30.0",
     "markdown2>=2.5.4",
     "matplotlib>=3.10.8",
