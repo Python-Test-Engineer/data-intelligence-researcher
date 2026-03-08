@@ -874,6 +874,16 @@ app_ui = ui.page_fluid(
         }
         .upload-zone .shiny-input-container { margin-bottom: 0 !important; }
         .upload-zone label { color: var(--text) !important; }
+        .upload-zone .btn-file,
+        .upload-zone .btn {
+            background: var(--surface-alt) !important;
+            color: var(--text) !important;
+            border: 1px solid var(--border) !important;
+        }
+        .upload-zone .btn-file:hover,
+        .upload-zone .btn:hover {
+            filter: brightness(1.1);
+        }
         .data-preview {
             background: var(--surface); border-radius: 10px; border: 1px solid var(--border);
             padding: 12px 16px; margin: 0 16px 16px; font-size: 0.82em;
