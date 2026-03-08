@@ -14,7 +14,6 @@ Results are assigned display_after timestamps; the UI polls every 1 s.
 
 from __future__ import annotations
 
-import random
 import time
 import threading
 from dataclasses import dataclass, field
@@ -44,38 +43,7 @@ def _read_csv_smart(path: str) -> pd.DataFrame:
 
 
 # ---------------------------------------------------------------------------
-# 1. Sample / fallback dataset
-# ---------------------------------------------------------------------------
-
-_SAMPLE_NAMES = [
-    "Alice", "Bob", "Carol", "David", "Eva", "Frank", "Grace", "Hiro",
-    "Iris", "Jake", "Kira", "Leo", "Mia", "Noah", "Olivia", "Pete",
-    "Quinn", "Rosa", "Sam", "Tina", "Uma", "Vince", "Wendy", "Xander",
-    "Yara", "Zoe", "Amir", "Bella", "Caden", "Dana",
-]
-_SAMPLE_SUBJECTS = ["Math", "Science", "English", "History", "Art"]
-
-
-def _generate_sample_df() -> pd.DataFrame:
-    random.seed(42)
-    rows = []
-    for i, name in enumerate(_SAMPLE_NAMES):
-        row: dict[str, Any] = {"student_id": i + 1, "name": name}
-        for subj in _SAMPLE_SUBJECTS:
-            grade = random.randint(50, 100)
-            if name in ("Frank", "Pete") and subj == "Math":
-                grade = None
-            if name == "Xander" and subj == "Science":
-                grade = 999
-            if name == "Zoe":
-                row["name"] = None
-            row[subj] = grade
-        rows.append(row)
-    return pd.DataFrame(rows)
-
-
-# ---------------------------------------------------------------------------
-# 2. Message dataclass
+# 1. Message dataclass
 # ---------------------------------------------------------------------------
 
 AGENT_COLORS = {
@@ -791,8 +759,8 @@ app_ui = ui.page_fluid(
         @keyframes fadeOutOverlay { from { opacity:1; } to { opacity:0; } }
         #agent-intro-card {
             background: white; border-radius: 24px;
-            width: 600px; max-width: 94vw;
-            padding: 54px 48px 36px;
+            width: 720px; max-width: 96vw;
+            padding: 52px 56px 40px;
             box-shadow: 0 32px 80px rgba(0,0,0,0.5);
             text-align: center; position: relative;
             animation: introSlideUp 0.35s ease;
@@ -807,18 +775,22 @@ app_ui = ui.page_fluid(
             text-decoration: underline; background: none; border: none; padding: 0;
         }
         .intro-skip:hover { color: #555; }
-        .intro-icon { font-size: 5.1em; margin-bottom: 14px; display: block; }
+        .intro-icon { font-size: 5.8em; margin-bottom: 12px; display: block; }
         .intro-agent-name {
-            font-size: 2.0em; font-weight: bold; margin-bottom: 8px;
+            font-size: 2.2em; font-weight: bold; margin-bottom: 8px;
         }
         .intro-badge {
-            display: inline-block; font-size: 1.0em; font-weight: bold;
-            color: white; padding: 4px 16px; border-radius: 20px;
-            margin-bottom: 20px; text-transform: uppercase; letter-spacing: 0.06em;
+            display: inline-block; font-size: 1.05em; font-weight: bold;
+            color: white; padding: 5px 18px; border-radius: 20px;
+            margin-bottom: 22px; text-transform: uppercase; letter-spacing: 0.06em;
+        }
+        .intro-bio {
+            font-size: 1.05em; color: #888; font-style: italic;
+            margin-bottom: 14px; line-height: 1.5;
         }
         .intro-desc {
-            font-size: 1.15em; color: #555; line-height: 1.6;
-            margin-bottom: 32px; min-height: 78px;
+            font-size: 1.25em; color: #444; line-height: 1.7;
+            margin-bottom: 30px; min-height: 90px;
         }
         .intro-dots {
             display: flex; justify-content: center; gap: 10px; margin-bottom: 24px;
@@ -828,14 +800,14 @@ app_ui = ui.page_fluid(
             background: #ddd; transition: background 0.3s;
         }
         .intro-next-btn {
-            padding: 13px 42px; border-radius: 10px; border: none;
-            font-size: 1.25em; font-weight: bold; cursor: pointer;
+            padding: 14px 48px; border-radius: 10px; border: none;
+            font-size: 1.3em; font-weight: bold; cursor: pointer;
             color: white; transition: opacity 0.2s;
         }
         .intro-next-btn:hover { opacity: 0.85; }
         .intro-progress-wrap {
             height: 4px; background: #eee; border-radius: 2px;
-            margin-top: 24px; overflow: hidden;
+            margin-top: 26px; overflow: hidden;
         }
         .intro-progress-bar { height: 100%; width: 0%; border-radius: 2px; }
     """
@@ -918,18 +890,23 @@ app_ui = ui.page_fluid(
         (function() {
             var AGENTS = [
                 { name: "Manager",      role: "Orchestrator",    icon: "🕵️",  color: "#4A90D9",
-                  desc: "Runs the show — loads your data, briefs the team, and coordinates every agent in sequence." },
+                  bio: "Age 42 · Favourite drink: triple-shot espresso · Once solved a mystery dataset at 2 am in his dressing gown",
+                  desc: "Runs the whole operation — loads your data, briefs every agent, and keeps the pipeline moving from start to finish. Nothing happens without his sign-off." },
                 { name: "DataCleaner",  role: "Quality Guard",   icon: "🧹",  color: "#E67E22",
-                  desc: "Scans every row for missing values, statistical outliers (3σ), and exact duplicates." },
+                  bio: "Age 29 · Allergic to NaN · Owns 14 different kinds of broom (she says it's not a metaphor)",
+                  desc: "Scans every single row for missing values, statistical outliers more than 3 standard deviations from the mean, and sneaky exact duplicates. She's never let a dirty row slip past her. Ever." },
                 { name: "Statistician", role: "Number Cruncher", icon: "📊",  color: "#27AE60",
-                  desc: "Computes mean and standard deviation for each numeric column on the cleaned dataset." },
+                  bio: "Age 35 · Reads textbooks for fun · Once argued with a calculator — and won",
+                  desc: "Computes mean, standard deviation, min, max, and median for every numeric column on the cleaned dataset. Ranks them, spots the outliers, and tells you what the numbers actually mean." },
                 { name: "Visualizer",   role: "Chart Builder",   icon: "📈",  color: "#8E44AD",
-                  desc: "Designs a colour-coded bar chart and writes a one-sentence visual insight." },
+                  bio: "Age 31 · Colour theory enthusiast · Has opinions about pie charts (they're wrong)",
+                  desc: "Translates raw statistics into a clear bar chart with a punchy title and a one-sentence insight. Believes every dataset deserves a good-looking chart." },
                 { name: "Reporter",     role: "Case Writer",     icon: "📝",  color: "#C0392B",
-                  desc: "Pulls all findings together into a structured Markdown investigation report." },
+                  bio: "Age 38 · Former investigative journalist · Still types at 120 wpm despite the RSI",
+                  desc: "Pulls every finding together into a full structured report: executive summary, data quality breakdown, statistical analysis, key findings, and recommended next steps. Then hands you a download button." },
             ];
 
-            var DURATION = 3000;
+            var DURATION = 4500;
             var current = 0;
             var timer = null;
             var rafId = null;
@@ -941,6 +918,7 @@ app_ui = ui.page_fluid(
             var iconEl   = document.createElement('span');  iconEl.className = 'intro-icon';
             var nameEl   = document.createElement('div');   nameEl.className = 'intro-agent-name';
             var badgeEl  = document.createElement('span');  badgeEl.className = 'intro-badge';
+            var bioEl    = document.createElement('div');   bioEl.className = 'intro-bio';
             var descEl   = document.createElement('div');   descEl.className = 'intro-desc';
             var dotsEl   = document.createElement('div');   dotsEl.className = 'intro-dots';
             var nextBtn  = document.createElement('button'); nextBtn.className = 'intro-next-btn';
@@ -954,7 +932,7 @@ app_ui = ui.page_fluid(
             });
 
             progWrap.appendChild(progBar);
-            card.append(skipBtn, iconEl, nameEl, badgeEl, descEl, dotsEl, nextBtn, progWrap);
+            card.append(skipBtn, iconEl, nameEl, badgeEl, bioEl, descEl, dotsEl, nextBtn, progWrap);
             overlay.appendChild(card);
 
             skipBtn.addEventListener('click', dismiss);
@@ -965,6 +943,7 @@ app_ui = ui.page_fluid(
                 iconEl.textContent  = a.icon;
                 nameEl.textContent  = a.name;  nameEl.style.color = a.color;
                 badgeEl.textContent = a.role;  badgeEl.style.background = a.color;
+                bioEl.textContent   = a.bio;
                 descEl.textContent  = a.desc;
                 nextBtn.textContent = (i === AGENTS.length - 1) ? 'All set! →' : 'Next →';
                 nextBtn.style.background = a.color;
@@ -1135,12 +1114,30 @@ def app_server(input, output, session):
         clock()
         if not _is_complete():
             return ui.div()
-        report_html = markdown2.markdown(_results.get("report", ""), extras=["tables", "fenced-code-blocks"])
+        report_md = _results.get("report", "")
+        report_html = markdown2.markdown(report_md, extras=["tables", "fenced-code-blocks"])
+        import base64
+        b64 = base64.b64encode(report_md.encode()).decode()
+        download_js = (
+            f"var a=document.createElement('a');"
+            f"a.href='data:text/markdown;base64,{b64}';"
+            f"a.download='investigation_report.md';a.click();"
+        )
         return ui.div(
             ui.div("Investigation Results", class_="panel-title", style="font-size:1.1em;"),
             ui.div(
+                ui.tags.button(
+                    "Download Report (.md)",
+                    onclick=download_js,
+                    style=(
+                        "float:right;background:#4A90D9;color:white;border:none;"
+                        "border-radius:7px;padding:7px 18px;font-size:0.88em;"
+                        "font-weight:bold;cursor:pointer;margin-bottom:10px;"
+                    ),
+                ),
                 ui.div("Final Report", style="font-weight:bold;margin-bottom:10px;color:#333;"),
                 ui.div(ui.HTML(report_html), class_="report-text"),
+                style="clear:both;",
             ),
             class_="results-panel",
         )
@@ -1152,20 +1149,10 @@ def app_server(input, output, session):
         if _started:
             return
 
-        # Prefer uploaded file; fall back to active_df or sample
-        f = input.csv_file()
-        if f:
-            try:
-                df = _read_csv_smart(f[0]["datapath"])
-                active_df.set(df)
-            except Exception as exc:
-                console.print(f"[red]Error reading file: {exc}[/]")
-                df = active_df() or _generate_sample_df()
-        else:
-            df = active_df()
+        df = active_df()
         if df is None:
-            df = _generate_sample_df()
-            active_df.set(df)
+            console.print("[red]No file loaded — upload a CSV first.[/]")
+            return
 
         _started = True
         interval = float(input.interval())
