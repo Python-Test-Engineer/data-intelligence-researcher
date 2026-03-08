@@ -1,4 +1,4 @@
-In `data` there is a csv called `analytics.csv`
+In `data` there is a csv called `data.csv`
 
 Create an exploratory report and plan of how to do ETL, analysis, charts, plots and reports to gain insight into our analytics.
 
@@ -8,4 +8,3 @@ ASK SOME QUESTIONS for further clarifications.
 
 Create analytics_report.md in `_plans` folder
 
-SHAPE (259115, 14)
