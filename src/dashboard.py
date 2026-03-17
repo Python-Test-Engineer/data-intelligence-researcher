@@ -19,7 +19,7 @@ if not _candidates:
 
 OUTPUT_DIR   = _candidates[-1]
 PROJECT_NAME = OUTPUT_DIR.name
-PORT         = 8000
+PORT         = 8001
 
 DARKLY_CSS = "https://cdn.jsdelivr.net/npm/bootswatch@5.3.3/dist/darkly/bootstrap.min.css"
 FLATLY_CSS = "https://cdn.jsdelivr.net/npm/bootswatch@5.3.3/dist/flatly/bootstrap.min.css"
@@ -226,20 +226,16 @@ app_ui = ui.page_navbar(
     # Nav panels
     *_nav_panels,
 
-    # Dark / Light toggle — right-aligned in navbar via nav_control
+    # Dark / Light toggle — icon lives INSIDE the button so clicks always register
     ui.nav_control(
-        ui.div(
-            ui.output_ui("toggle_icon", inline=True),
-            ui.input_action_button(
-                "toggle_theme",
-                "",
-                class_="btn btn-sm ms-1",
-                style=(
-                    "border:none; background:transparent; "
-                    "cursor:pointer; padding:0.2rem 0.5rem;"
-                ),
+        ui.input_action_button(
+            "toggle_theme",
+            ui.output_ui("toggle_icon", inline=True),   # icon IS the button label
+            class_="btn btn-sm",
+            style=(
+                "border:none; background:transparent; "
+                "cursor:pointer; padding:0.3rem 0.6rem; margin-right:0.25rem;"
             ),
-            style="display:flex; align-items:center; gap:0.15rem; padding-right:0.5rem;",
         )
     ),
 
