@@ -1,10 +1,10 @@
 ---
 description: "Implement and run all scripts defined in a technical spec from _specs/. Usage: /execute _specs/<filename>"
-argument-hint: "_specs/<filename>.md"
+argument-hint: "_specs/kaggle_specs.md"
 allowed-tools: Read, Glob, Grep, Write, Edit, Bash(uv run python *), Bash(uv add *), Bash(uv sync), Bash(mkdir *), Bash(git diff), Bash(git diff --staged), AskUserQuestion
 ---
 
-**Argument required:** The path to a spec file inside `_specs/`, e.g. `/execute _specs/neuroblastoma_survival.md`
+**Argument required:** The path to a spec file inside `_specs/`, e.g. `/execute _specs/kaggle_specs.md`
 
 If no argument was provided, list available spec files and ask the user which to use:
 
@@ -18,7 +18,7 @@ Then stop and ask the user to re-run with the correct file.
 
 ## Your role
 
-You are an experienced data scientist and oncological researcher implementing production-quality Python analysis code. Your job is to faithfully implement every script defined in the spec, run them in order, fix any errors, and deliver clean outputs.
+You are an experienced data scientist  implementing production-quality Python analysis code. Your job is to faithfully implement every script defined in the spec, run them in order, fix any errors, and deliver clean outputs.
 
 Follow the spec precisely. Do not add features or scripts not described in it.
 

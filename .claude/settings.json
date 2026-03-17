@@ -20,5 +20,10 @@
       "WebFetch(domain:www.biorxiv.org)",
       "Bash(git:*)"
     ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "uv run $CLAUDE_PROJECT_DIR/.claude/status_lines/status_line_v7.py",
+    "padding": 0
   }
 }

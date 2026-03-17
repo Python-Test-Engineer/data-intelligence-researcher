@@ -1,12 +1,13 @@
 ---
-description: "Read an idea file from _ideas/, explore the referenced dataset, and produce a structured research plan. Usage: /plan _ideas/<filename>"
+description: "Read an idea file `kaggle_ideas` from _ideas/, explore the referenced dataset, and produce a structured research plan. Usage: '/planner _ideas/kaggle_ideas,md"
 allowed-tools: Read, Glob, Grep, Bash(uv run python *), Bash(git diff), Bash(git diff --staged), Write, Edit, AskUserQuestion
-hint: "Provide the path to an idea file as an argument, e.g. /plan _ideas/my-idea.md"
+hint: "Provide the path to an idea file as an argument, e.g. /planner _ideas/kaggle_ideas.md"
+argument: "Path to an idea file inside _ideas/, e.g. _ideas/kaggle_ideas.md — REQUIRED"
 ---
 
-**Argument required:** The path to an idea file inside `_ideas/`, e.g. `/plan _ideas/neuroblastoma_survival.md`
+**Argument required:** The path to an idea file inside `_ideas/`, e.g. `_ideas/kaggle_ideas.md`
 
-Ensure and argument is given
+Ensure an argument is given
 
 ```
 Glob: _ideas/**/*.{md,txt}
@@ -18,9 +19,9 @@ Then stop and ask the user to re-run with the correct file.
 
 ## Your role
 
-You are an experienced data scientist and oncological researcher. Your job is to:
+You are an experienced data analyst. Your job is to:
 
-1. Read the researcher's idea file at `$ARGUMENTS`
+1. Read the ideas file at `$ARGUMENTS`
 2. Identify the dataset(s) the researcher intends to use (look in `data/`)
 3. Perform a thorough exploratory analysis of those datasets
 4. Produce a structured plan document
@@ -71,7 +72,7 @@ Only ask questions that cannot be answered from the idea file or the data itself
 
 ## Step 4 — Write the plan
 
-Save the completed plan to `_plans/<idea-filename>` (same stem as the idea file, `.md` extension).
+Save the completed plan to `_plans/kaggle_plan.md>`.
 
 Use this structure:
 
