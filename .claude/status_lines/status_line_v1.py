@@ -408,7 +408,7 @@ def generate_status_line(input_data):
         f"{DIM}{week_reset}{RESET}  {DIM}{fmt_tokens(weekly_tok)}/{fmt_tokens(weekly_limit)}{RESET}",
     )
 
-    return "\n".join([line1, line2, line3])
+    return "\n".join([line1, line2])
 
 
 # ---------------------------------------------------------------------------

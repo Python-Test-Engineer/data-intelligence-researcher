@@ -5,6 +5,8 @@ allowed-tools: Read, Glob, Grep, Bash(uv run python *), Bash(uv add *), Write, A
 
 Create a dashboard file in `src/dashboard.py` using **Shiny for Python only**.
 
+**LIGHT MODE**
+
 Auto-discover the most recent project output folder by globbing `output/PROJECT_*` and selecting the one with the highest `_XX` number.
 
 ---
@@ -136,9 +138,15 @@ def encode_png(path: Path) -> str:
     return "data:image/png;base64," + base64.b64encode(path.read_bytes()).decode()
 ```
 
-### Plotly charts
+### When to use Plotly vs Shiny
 
-All interactive charts must use `plotly.express` or `plotly.graph_objects`. Render them with `@render_widget` from `shinywidgets`:
+**Use Shiny native components by default:**
+- Static images → `ui.tags.img` with base64 src
+- Tables / data grids → `render.DataGrid`
+- Text / HTML content → `ui.tags.pre`, `ui.tags.iframe`, `ui.HTML`
+- KPI cards → `ui.div` / `ui.tags.*`
+
+**Use Plotly only when** there is no Shiny-native equivalent for the visualisation type required (e.g. an interactive bar/pie chart of aggregated data). When Plotly is used, render via `@render_widget` from `shinywidgets` and always pass the matching template:
 
 ```python
 from shinywidgets import output_widget, render_widget
@@ -154,8 +162,6 @@ def my_chart():
     fig.update_layout(template="plotly_dark" if theme_dark.get() else "plotly_white")
     return fig
 ```
-
-Always pass `template="plotly_dark"` or `"plotly_white"` based on `theme_dark.get()` so charts match the current theme.
 
 ### KPI card helper
 
@@ -216,11 +222,11 @@ The app should start and print something like:
 Uvicorn running on http://127.0.0.1:8000
 ```
 
-Run in **background** so it does not block. Then open in the browser:
+Run in **background** so it does not block. Then open in the browser with the PORT that has been selected (a random number between 8000-8999), we will call it PORT_NUMBER
 
-- Windows: `start http://127.0.0.1:8000`
-- macOS: `open http://127.0.0.1:8000`
-- Linux: `xdg-open http://127.0.0.1:8000`
+- Windows: `start http://127.0.0.1:PORT_NUMBER`
+- macOS: `open http://127.0.0.1:PORT_NUMBER`
+- Linux: `xdg-open http://127.0.0.1:PORT_NUMBER`
 
 ---
 
