@@ -1,7 +1,7 @@
 # Technical Spec — Medical Appointment No-Show EDA
 
 **Plan source:** _plans/kaggle_plan.md
-**Dataset(s):** data/kaggle.csv
+**Dataset(s):** data/data.csv
 **Output directory:** output/PROJECT_01/
 **Date:** 2026-03-17
 

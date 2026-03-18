@@ -1,7 +1,7 @@
 # Research Plan — Medical Appointment No-Show EDA
 
 **Idea source:** _ideas/kaggle_ideas.md
-**Dataset(s):** data/kaggle.csv
+**Dataset(s):** data/data.csv
 **Date:** 2026-03-17
 
 ---

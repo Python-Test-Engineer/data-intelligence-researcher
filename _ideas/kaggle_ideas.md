@@ -1,4 +1,4 @@
-In `data` there is a csv called `kaggle.csv`
+In `data` there is a csv called `data.csv`
 
 Create an exploratory report and plan of how to do ETL, analysis, charts, plots and reports to gain insight into our analytics. It is important that charts and plots are produced as well as an HTML report.
 

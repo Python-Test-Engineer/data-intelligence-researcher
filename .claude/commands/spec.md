@@ -2,6 +2,7 @@
 description: "Translate a research plan from _plans/kaggle_plan.md into a detailed Python technical spec. Usage: /spec _plans/<filename>"
 argument-hint: "_plans/<filename>.md"
 allowed-tools: Read, Glob, Write, Edit, AskUserQuestion
+model: Sonnet
 ---
 
 **Argument required:** The path to a plan file inside `_plans/`, e.g. ` _plans/kaggle_plan.md`

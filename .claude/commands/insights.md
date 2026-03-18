@@ -3,7 +3,7 @@ description: "Analyse images and Python scripts to generate deep business & data
 allowed-tools: Read, Glob, Grep, Write, Edit, Bash(uv run python *), AskUserQuestion
 hint: "Provide two paths: the image folder and the Python scripts folder, e.g. /insights output/PROJECT_01/plots src"
 argument: "Two space-separated paths — image_folder python_folder — REQUIRED"
-model: claude-opus-4-6
+model: Opus
 ---
 
 > **Model:** This command requires **claude-opus-4-6** (Claude Opus 4.6). If you are not already running that model, switch with `/model claude-opus-4-6` before invoking.

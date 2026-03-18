@@ -1,8 +1,9 @@
 ---
-description: "Read an idea file `kaggle_ideas` from _ideas/, explore the referenced dataset, and produce a structured research plan. Usage: '/planner _ideas/kaggle_ideas,md"
+description: "Read an idea file `kaggle_ideas` from _ideas/, explore the referenced dataset, and produce a structured research plan. Usage: '/planner _ideas/kaggle_ideas.md"
 allowed-tools: Read, Glob, Grep, Bash(uv run python *), Bash(git diff), Bash(git diff --staged), Write, Edit, AskUserQuestion
 hint: "Provide the path to an idea file as an argument, e.g. /planner _ideas/kaggle_ideas.md"
 argument: "Path to an idea file inside _ideas/, e.g. _ideas/kaggle_ideas.md — REQUIRED"
+model: Opus
 ---
 
 **Argument required:** The path to an idea file inside `_ideas/`, e.g. `_ideas/kaggle_ideas.md`
