@@ -1,5 +1,8 @@
 # Insight Report: 04_binary_flags_prevalence.jpg
 
+![image](../plots/04_binary_flags_prevalence.jpg) 
+
+
 **Chart type:** Vertical bar chart
 **Variables displayed:** Six binary patient flags on x-axis (Scholarship, Hypertension, Diabetes, Alcoholism, Disability, SMS Received), prevalence as % of appointments on y-axis
 **Generated:** 2026-03-18

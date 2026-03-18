@@ -1,5 +1,9 @@
 # Insight Report: 07_appointments_by_weekday.jpg
 
+![image](../plots/07_appointments_by_weekday.jpg) 
+
+
+
 **Chart type:** Vertical bar chart
 **Variables displayed:** Day of week (Mon–Sat) on x-axis, appointment count on y-axis
 **Generated:** 2026-03-18

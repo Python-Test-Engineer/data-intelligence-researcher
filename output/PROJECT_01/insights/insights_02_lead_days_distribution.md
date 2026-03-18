@@ -1,5 +1,8 @@
 # Insight Report: 02_lead_days_distribution.jpg
 
+![image](../plots/02_lead_days_distribution.jpg) 
+
+
 **Chart type:** Histogram (clipped at 120 days)
 **Variables displayed:** Lead days (days between scheduling and appointment) on x-axis, appointment count on y-axis, with mean line at 10.2 days
 **Generated:** 2026-03-18

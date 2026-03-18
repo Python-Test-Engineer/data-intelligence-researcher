@@ -1,5 +1,8 @@
 # Insight Report: 03_noshow_overall.jpg
 
+![image](../plots/03_noshow_overall.jpg) 
+
+
 **Chart type:** Horizontal bar chart
 **Variables displayed:** Attendance status (Attended vs No-Show) on y-axis, appointment count on x-axis, with percentage annotations
 **Generated:** 2026-03-18

@@ -1,5 +1,7 @@
 # Insight Report: 05_gender_split.jpg
 
+![image](../plots/05_gender_split.jpg)
+
 **Chart type:** Vertical bar chart
 **Variables displayed:** Gender (Female, Male) on x-axis, appointment count on y-axis, with count and percentage annotations
 **Generated:** 2026-03-18

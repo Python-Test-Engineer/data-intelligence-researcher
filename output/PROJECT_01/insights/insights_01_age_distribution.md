@@ -1,5 +1,7 @@
 # Insight Report: 01_age_distribution.jpg
 
+![image](../plots/01_age_distribution.jpg) 
+
 **Chart type:** Histogram with KDE overlay
 **Variables displayed:** Patient age (years) on x-axis, appointment count on y-axis, with median line at 37
 **Generated:** 2026-03-18

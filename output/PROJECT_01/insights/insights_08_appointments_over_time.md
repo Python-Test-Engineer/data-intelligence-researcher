@@ -1,5 +1,8 @@
 # Insight Report: 08_appointments_over_time.jpg
 
+![image](../plots/08_appointments_over_time.jpg) 
+
+
 **Chart type:** Line chart (time series)
 **Variables displayed:** Date (Apr–Jun 2016) on x-axis, appointments per day on y-axis
 **Generated:** 2026-03-18

@@ -1,5 +1,7 @@
 # Insight Report: 06_top20_neighbourhoods.jpg
 
+![image](../plots/06_top20_neighbourhoods.jpg) 
+
 **Chart type:** Horizontal bar chart (sorted ascending)
 **Variables displayed:** Neighbourhood names on y-axis, number of appointments on x-axis, for the top 20 by volume
 **Generated:** 2026-03-18
