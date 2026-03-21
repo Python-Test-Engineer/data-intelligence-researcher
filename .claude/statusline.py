@@ -275,7 +275,7 @@ def usage_row(label, dot_bar, pct, col, recycle_label):
     return (
         f"{DIM}{label:<8}{RESET}"
         f"{DIM}{dot_bar}{RESET}  "
-        f"{col}{pct:.0f}%{RESET}  "
+        f"{col}{int(pct):>2d}%{RESET}  "
         f"{DIM}{RECYCLE}{RESET} {recycle_label}"
     )
 # ---------------------------------------------------------------------------
