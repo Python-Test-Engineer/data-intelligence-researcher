@@ -1,112 +1,115 @@
 # Data Intelligence Insights Report
 
 **Project:** PROJECT_01
-**Images analysed:** 10
+**Images analysed:** 25
+**Scripts analysed:** 6
 **Generated:** 2026-03-18
 
 ---
 
 ## Executive Summary
 
-This sales order dataset ($97,658 revenue, 48 clean orders, Jan--May 2025) reveals a business with balanced geography and a diversified product line but with two critical structural weaknesses: **zero customer retention** (every order is from a unique buyer) and **hidden regional product gaps** (Consulting is absent from East and West). Revenue peaked in March before declining through May, with an April volume-revenue divergence signalling shrinking deal sizes. The discount structure is tiered and controlled, but one rep (Priya Sharma) gives significantly higher average discounts. Addressing the retention gap and unlocking Consulting in underserved regions represent the two highest-leverage growth opportunities.
+This analysis of ~110,000 medical appointments in Vitória, Brazil reveals that the 20.2% overall no-show rate masks two fundamentally different populations: same-day walk-ins (45% of volume, 5% no-show) and advance bookings (55% of volume, 29% no-show). Appointment lead time and prior patient no-show history are by far the strongest predictors — together they explain more variance than all demographic and clinical features combined. The SMS reminder system works (reducing no-shows by 6-8pp within lead-time strata) but appears counterproductive in raw data due to Simpson's paradox. Socioeconomic barriers (Scholarship/Bolsa Família recipients) drive a consistent 3.5pp no-show premium that is not explained by geography. The highest-risk micro-segment — hypertensive adolescents — reaches a 35% no-show rate, demanding targeted intervention.
 
 ---
 
 ## Key Insights
 
-### Insight 1 -- Zero Customer Retention Is the Single Biggest Strategic Risk
+### Insight 1 — Two Healthcare Systems in One: The Same-Day Divide
 
-**Source charts:** top_customers.png, order_status.png, cumulative_revenue.png
+**Source charts:** 02_lead_days_distribution, 11_noshow_by_lead_days, 22_same_day_profile
 
-**Observation:** All 48 clean orders come from 48 unique customers -- there is not a single repeat buyer in 5 months of data. The top 10 customers account for only 34.8% of revenue, far below typical B2B Pareto concentration. The cumulative revenue chart's smooth upward curve masks the fact that every dollar comes from a new customer.
+**Observation:** 45% of all appointments are same-day (lead_days=0) with a 4.6% no-show rate, while the remaining 55% (advance bookings) have a 29% no-show rate. These two populations differ demographically: same-day patients skew younger and healthier (pediatric acute visits), while advance bookings serve older chronic disease patients with higher hypertension/diabetes prevalence. The overall 20.2% rate is a misleading weighted average of these two distinct systems.
 
-**Implication:** Without recurring revenue, the business must acquire a new customer for every sale, making revenue inherently unpredictable and acquisition-cost dependent. Building a customer success function and launching win-back campaigns for top customers should be the number one strategic priority.
+**Implication:** All predictive models, overbooking algorithms, and intervention strategies should be built separately for same-day vs advance booking populations. Targeting same-day patients with reminders is wasteful (5% base rate); all resources should focus on the advance-booking cohort where a 29% base rate offers maximum room for improvement.
 
-**Confidence:** High -- zero-repeat finding is unambiguous across the entire dataset.
-
----
-
-### Insight 2 -- Consulting Revenue Absent from Half the Country
-
-**Source charts:** revenue_heatmap.png, revenue_by_category.png, revenue_by_region.png
-
-**Observation:** The heatmap reveals two $0 cells: East x Consulting and West x Consulting. Consulting has the highest AOV ($2,503) of any category but generates revenue only in North ($9,675) and South ($10,350). Meanwhile, the regional bar chart shows near-parity overall, masking this category-level imbalance.
-
-**Implication:** Expanding Consulting into East and West represents a high-AOV, low-volume growth lever. Even 3--4 Consulting deals per region at the existing AOV would add $7,500--$10,000 in revenue -- an 8--10% total revenue uplift with no new product development required.
-
-**Confidence:** High -- zero-revenue cells are definitive; AOV advantage is validated from clean data.
+**Confidence:** High — based on ~50K same-day and ~60K advance appointments with unambiguous demographic differences.
 
 ---
 
-### Insight 3 -- March Peak Followed by Revenue Decline Signals a Q2 Problem
+### Insight 2 — Prior Behaviour is the Strongest Crystal Ball
 
-**Source charts:** monthly_revenue.png, cumulative_revenue.png
+**Source charts:** 17_repeat_patient_noshow, 24_patient_appointment_counts
 
-**Observation:** Revenue peaked at ~$25,000 in March (+46% MoM), then declined in April (-8.7%) and collapsed in May (-37.4%). The cumulative revenue curve's gradient visibly flattens from mid-April onward. April's decline is notable because order count was at its highest (12 orders) -- meaning the drop was driven by smaller deals, not fewer deals.
+**Observation:** Patients with 0% prior no-show history miss 17.5% of appointments; those with 51-75% prior history miss 39.7% — a 22.2pp spread, the widest of any single feature. Additionally, highly frequent visitors (10+ appointments) have the lowest no-show rate (16.5%), while mid-frequency patients (6-10 visits) have the highest (22.4%). Past behaviour dominates all demographic predictors.
 
-**Implication:** The April volume-up / revenue-down pattern suggests the sales team may be chasing quantity at the expense of deal quality. If May's decline is structural rather than a partial-month artefact, the business faces a Q2 revenue trajectory problem requiring immediate pipeline review.
+**Implication:** A patient's prior no-show rate should be the centrepiece feature of any predictive model and the primary basis for intervention tiering. A simple rule — "flag patients with >25% prior no-show rate for enhanced outreach" — would capture most of the at-risk population with minimal model complexity.
 
-**Confidence:** Medium -- May is likely a partial month, which limits confidence in the decline's true magnitude.
-
----
-
-### Insight 4 -- Tiered Discount Structure Is Sound, but One Rep Is an Outlier
-
-**Source charts:** discount_distribution.png, sales_rep_performance.png
-
-**Observation:** Discounts cluster at discrete tiers (0%, 5%, 10%, 15%, 20%) with 60--65% of orders at 0--5%. Priya Sharma averages 8.6% discount -- nearly double some colleagues -- yet her revenue ($22,092) is the lowest of the four named reps. Web Dev is the most aggressively discounted category (up to 20%).
-
-**Implication:** The controlled tiering is good discipline, but Sharma's higher discount rate without proportionally higher volume suggests discounting is eroding margin without driving growth. A coaching intervention on deal pricing or a discount approval workflow for deals above 10% may be warranted.
-
-**Confidence:** High -- discount values are discrete and validated; rep-level patterns are clear even at small sample sizes.
+**Confidence:** High — the analysis correctly uses only chronologically prior data to avoid leakage, and the monotonic trend is robust.
 
 ---
 
-### Insight 5 -- Product Revenue Is Driven by Pricing Power, Not Volume
+### Insight 3 — The SMS Paradox: When Confounders Reverse the Truth
 
-**Source charts:** revenue_by_product.png, revenue_by_category.png
+**Source charts:** 12_noshow_by_sms, 19_sms_paradox, 04_binary_flags_prevalence, 18_correlation_heatmap
 
-**Observation:** All six products have exactly 8 orders each -- a perfectly uniform distribution. Revenue differences ($13,725--$20,025) are therefore entirely explained by unit price and discount variation. Data Cleansing Service (Consulting) leads at $20,025 ($2,503 AOV) while AI Training Workshop trails at $13,725 ($1,716 AOV).
+**Observation:** Raw data shows SMS recipients have an 11pp *higher* no-show rate (27.6% vs 16.7%). However, when stratified by lead time, SMS *reduces* no-shows by 6-8pp within every stratum where both groups exist. The paradox arises because SMS was selectively sent to long-lead-time appointments (r=0.40 between SMS_received and lead_days), which have inherently higher no-show risk. Only 32% of appointments received SMS.
 
-**Implication:** With uniform volume, the revenue leaderboard is a direct pricing power ranking. AI Training Workshop's 46% revenue discount relative to Data Cleansing Service, despite equal order counts, suggests it is either underpriced or positioned as a lower-value offering. Product management should evaluate whether a price increase or product bundling could close this gap.
+**Implication:** This is a textbook Simpson's paradox with direct operational consequences. (1) SMS reminders should be expanded to all non-same-day appointments; (2) the estimated 6pp within-stratum effect applied to ~60K advance bookings would recover ~3,600 appointments; (3) any ML model must handle the SMS/lead_days confound explicitly or risk learning a spurious positive association.
 
-**Confidence:** High -- 8-orders-per-product uniformity is definitive in the data.
-
----
-
-### Insight 6 -- Regional Balance Masks Radically Different Category Mixes
-
-**Source charts:** revenue_by_region.png, revenue_heatmap.png
-
-**Observation:** The regional bar chart shows a tight $22K--$27K spread, suggesting homogeneity. But the heatmap reveals entirely different category compositions: South is Consulting + Web Dev heavy ($10,350 + $11,410); West is Software-dominant ($11,840 with zero Consulting); North is the most balanced; East mirrors West without Consulting. South's Training cell ($855) is almost zero.
-
-**Implication:** One-size-fits-all regional strategy would be ineffective. Each region needs a tailored product emphasis aligned with its demonstrated market composition. Marketing campaigns and rep training should be localised by category strength.
-
-**Confidence:** High -- the heatmap's annotated dollar values leave no ambiguity about regional specialisation.
+**Confidence:** High — the within-stratum reversal is consistent across 3 lead-time buckets with large samples.
 
 ---
 
-### Insight 7 -- The "(unknown)" Rep Order Is a Data Governance Red Flag
+### Insight 4 — Age as a Lifecycle Predictor with a Dangerous Interaction
 
-**Source charts:** sales_rep_performance.png
+**Source charts:** 01_age_distribution, 10_noshow_by_age_group, 20_age_condition_heatmap
 
-**Observation:** One order ($3,000) has no sales rep attribution, appearing as "(unknown)" in the performance chart. While small in absolute terms, it represents a gap in the CRM data pipeline.
+**Observation:** No-show rates follow a clear lifecycle gradient: adolescents/young adults (11-20: 25.2%, 21-30: 24.6%) are highest risk; elderly patients (61-70: 14.7%) are most reliable — a 10.5pp spread. The age × hypertension interaction reveals an extreme outlier: hypertensive adolescents hit 35.0%, the highest rate of any identifiable subgroup. The bimodal age distribution (pediatric spike + chronic-disease peak) confirms two distinct patient populations using the system.
 
-**Implication:** If this missing attribution scales with data volume (e.g., 2% of orders), it could distort commission calculations, territory performance metrics, and pipeline forecasting. The root cause (manual entry error, system integration gap, or departed rep) should be investigated and fixed at the source.
+**Implication:** Age-specific intervention design is essential: digital nudges for 11-30, transport/mobility support for 81+, and minimal intervention for the reliable 50-70 cohort. The hypertensive adolescent micro-segment (35% no-show) demands targeted outreach — these are medically critical patients whose conditions require consistent monitoring.
 
-**Confidence:** High -- single data point, but the governance implication is systemic.
+**Confidence:** High for the main age effect; Medium for the hypertensive adolescent cell (small sample size needs confidence interval verification).
+
+---
+
+### Insight 5 — Socioeconomic Barriers Trump Geography
+
+**Source charts:** 13_noshow_by_conditions, 23_scholarship_analysis, 15_noshow_by_neighbourhood, 21_neighbourhood_inequality
+
+**Observation:** Bolsa Família (Scholarship) recipients have a consistent ~3.5pp no-show premium (23.5% vs 19.8%) that persists identically across low-volume, medium-volume, and high-volume neighbourhoods. Meanwhile, patients with chronic conditions (Hypertension, Diabetes) actually have *lower* no-show rates than healthy patients, by 2-4pp. Neighbourhood-level rates vary by 11pp across the top 30 (Itararé ~27%, Santa Martha ~16%), with a Gini coefficient of 0.138.
+
+**Implication:** The Scholarship effect is socioeconomic, not geographic — it does not shrink in well-connected central areas. Interventions should address personal barriers (lost wages, childcare, transport cost) rather than simply placing clinics closer. The protective effect of chronic conditions means "sicker patients attend better" — a finding that challenges the intuition that clinical complexity increases no-shows.
+
+**Confidence:** High — the Scholarship effect's consistency across 3 independent neighbourhood terciles is strong evidence of a genuine independent effect.
+
+---
+
+### Insight 6 — Temporal Stability: A Persistent Structural Problem
+
+**Source charts:** 08_appointments_over_time, 16_noshow_by_month, 25_weekly_noshow_timeseries, 07_appointments_by_weekday, 14_noshow_by_weekday
+
+**Observation:** The system operates at a stable capacity ceiling of ~4,500 appointments/day with a regular weekly sawtooth pattern. Monthly no-show variation is only 2.3pp (April 19.6%, May 20.8%, June 18.5%). Weekly fluctuations are within ±1.5pp of the mean. Day-of-week effects are modest: Friday/Saturday are worst (21-23%), Thursday best (19.3%).
+
+**Implication:** The no-show problem is structural and persistent, not episodic. There are no "crisis weeks" or seasonal shocks — the 20% rate is baked into the system's operating characteristics. This stability is actually good news for modelling: a prediction system trained on any month should generalise well to others. Overbooking algorithms can use a steady-state assumption with minor day-of-week adjustments.
+
+**Confidence:** High for stability within this window; limited confidence for extrapolation beyond April–June due to dataset scope.
+
+---
+
+### Insight 7 — The Correlation Paradox: Weak Linear Signals, Strong Non-Linear Effects
+
+**Source charts:** 18_correlation_heatmap, 09_noshow_by_gender
+
+**Observation:** Pearson correlations with noshow_flag are universally weak: lead_days (r=0.19) and SMS_received (r=0.13) are the only features above |0.06|. Age correlates at just r=-0.06 despite a 10.5pp spread across age groups. Gender is a complete non-predictor (20.3% vs 20.0%). Significant multicollinearity exists: Age↔Hypertension (r=0.50), Hypertension↔Diabetes (r=0.43), lead_days↔SMS (r=0.40).
+
+**Implication:** Linear models (logistic regression) will underperform — the no-show problem is fundamentally non-linear with important interaction effects (age × condition, SMS × lead_time). Tree-based models (XGBoost, Random Forest) are strongly preferred. Feature engineering (prior_noshow_rate, same-day flag) will provide more lift than adding raw demographic features. The multicollinearity clusters (Age/Hypertension/Diabetes and lead_days/SMS) must be handled through feature selection or regularisation.
+
+**Confidence:** High — Pearson values are exact; the mismatch between linear correlation and actual effect sizes confirms non-linearity.
 
 ---
 
 ## Patterns Across Analyses
 
-1. **Surface uniformity conceals structural imbalance:** Region, product, and rep charts all show near-parity at the aggregate level. But drilling into the heatmap, discount patterns, and customer data reveals hidden asymmetries -- zero Consulting in two regions, zero repeat customers, one rep discounting more aggressively. The most important insights in this dataset are invisible in single-dimension charts.
+1. **The lead-time thread runs through everything.** It directly predicts no-shows (chart 11), confounds the SMS effect (chart 12/19), drives the same-day population split (chart 22), and correlates with SMS receipt (chart 18). Lead time is the single most important variable in the entire analysis — it touches every other finding.
 
-2. **Volume is uniform; value is the differentiator:** With 8 orders per product and 11--13 per rep, the business distributes deals remarkably evenly. All variation in revenue comes from pricing, discounting, and product mix -- not sales activity volume. This means growth strategy should focus on value per deal (upselling, pricing optimisation, category expansion) rather than raw pipeline generation.
+2. **Age and chronic conditions form a tightly coupled system.** Age correlates with Hypertension (r=0.50) and Diabetes (r=0.43), both of which appear protective for no-shows — but this is largely because they serve as proxies for the elderly cohort that attends reliably. The true independent effects are weaker than raw rates suggest.
 
-3. **March is the pivot month:** Multiple charts converge on March as the inflection point -- peak monthly revenue, steepest cumulative gradient, and the month after which both metrics decline. Understanding what happened in March (large deals? end-of-quarter push? specific campaigns?) would unlock the key to replicating that performance.
+3. **Confounding is pervasive.** SMS ↔ lead_time, age ↔ chronic conditions, Scholarship ↔ age ↔ neighbourhood — nearly every bivariate relationship in this dataset has at least one confounding pathway. Naive single-variable analysis would produce misleading conclusions in at least 3 of 25 charts. The SMS paradox (chart 12 vs 19) is the most dramatic example but not the only one.
 
-4. **Data quality is good but has edges:** Two dirty rows were removed (extreme quantity, negative price), one date had mixed formatting, one order lacks a rep, and one customer lacks an email. These are manageable issues but suggest the data entry or CRM process has no hard validation at the point of capture.
+4. **Volume concentration creates intervention leverage.** The top 5 neighbourhoods hold ~25% of all appointments. Combined with the same-day/advance split (chart 22), a targeted intervention in just 5 neighbourhoods for advance-booking patients only could reach ~15% of total volume with ~30% of total no-shows.
+
+5. **The dataset has two hidden populations that should never be merged.** Same-day (young, acute, 5% no-show, no SMS) vs advance (older, chronic, 29% no-show, SMS sent). Every aggregate statistic in this report is a misleading blend of these two groups. This is the most important structural insight for anyone building on this analysis.
 
 ---
 
@@ -114,62 +117,103 @@ This sales order dataset ($97,658 revenue, 48 clean orders, Jan--May 2025) revea
 
 | Risk | Affected Insights | Mitigation |
 |------|-------------------|------------|
-| May data likely incomplete (partial month) | Insight 3 (Q2 decline), cumulative revenue | Confirm data cutoff date; normalise May to full-month estimate before trend conclusions |
-| Sample size of 48 orders limits statistical inference | All insights | Frame findings as descriptive, not inferential; avoid claiming statistical significance |
-| 8-orders-per-product uniformity may indicate synthetic data | Insight 5 (pricing power) | Verify data provenance; if synthetic, note that real-world product mix is unlikely to be this uniform |
-| No cost/margin data available | Insights 2, 4, 5 (Consulting AOV, discounts, pricing) | Revenue != profit; high-AOV products may have proportionally higher delivery costs |
-| Single-month decline could be noise, not trend | Insight 3 | Require 3+ consecutive months of decline before triggering structural concern |
+| **Simpson's paradox** — confounded variables produce misleading aggregate effects | Insights 3 (SMS), 4 (age × conditions), 5 (Scholarship) | Always stratify by lead time before interpreting any other variable |
+| **Small sample sizes in tails** — extreme neighbourhood rates, rare conditions, elderly subgroups | Insights 4 (hypertensive adolescents), 6 (neighbourhood inequality) | Filter to ≥100 observations per cell; report confidence intervals |
+| **Single-city, 3-month snapshot** — no seasonal, geographic, or temporal generalisability | All insights | Validate on a second city or time period before deploying interventions |
+| **No appointment type data** — specialty, urgency, provider identity unavailable | Insights 1, 2, 6 | Collect appointment type in future data; it is likely a strong predictor |
+| **Observational data, not experimental** — causal claims about SMS, scheduling are tentative | Insight 3 (SMS effectiveness) | Design A/B tests stratified by lead time to confirm causal effects |
+| **Data truncation in June** — potential boundary effects on final weeks | Insight 6 (June rate decline) | Verify whether the dataset ends mid-June by checking the latest appointment date |
 
 ---
 
 ## Recommended Next Steps
 
 ### High Priority
-1. **Customer Retention Programme** -- Design a post-purchase follow-up and re-engagement workflow. With zero repeat customers, even a 10% retention rate would add ~$10K/month in predictable recurring revenue.
-2. **Consulting Expansion Pilot (East & West)** -- Assign or recruit Consulting-capable sales resource in East and West regions. Target 3--5 Data Cleansing Service deals per region in Q3.
-3. **May Data Verification** -- Confirm whether May is complete or partial. If partial, adjust all trend analyses and re-evaluate the Q2 decline signal.
+1. **Build a segmented prediction model** — Separate models for same-day vs advance bookings, using prior_noshow_rate, lead_days, age, and neighbourhood as primary features. Use XGBoost with AUROC evaluation. Estimated lift: 5-10pp improvement in targeting efficiency over uniform overbooking.
+2. **Expand SMS to all advance bookings** — Currently only 32% receive SMS; the within-stratum effect of 6-8pp reduction justifies universal deployment for any appointment with lead_days ≥ 1. Estimated recovery: ~3,600 appointments per period.
+3. **Implement lead-time-proportional overbooking** — Same-day: no overbooking (5% base). 1-7d: 5% overbooking. 8-30d: 15%. 31-90d: 20%. This matches the empirical no-show rate curve from chart 11.
 
 ### Medium Priority
-1. **Discount Governance Review** -- Audit Priya Sharma's discount patterns and implement a manager-approval step for discounts above 10% across all reps.
-2. **March Performance Decomposition** -- Break down March's $25K peak by product, region, and rep to identify repeatable drivers.
-3. **Resolve Unknown Rep Attribution** -- Fix the CRM gap that produced the unattributed $3,000 order.
+4. **Pilot tiered outreach for high-risk patients** — Patients with >25% prior no-show rate get phone calls (not just SMS); patients with >50% get community health worker outreach or same-day rebooking preference.
+5. **Investigate the Scholarship population** — Cross-tabulate Bolsa Família recipients with age, lead time, and specific neighbourhoods to design a targeted support programme (transport vouchers, flexible scheduling, childcare).
+6. **Audit neighbourhood-level data quality** — Remove neighbourhoods with <50 appointments from rate comparisons; recalculate the inequality metrics.
 
 ### Exploratory / Speculative
-1. **Training Product Repositioning** -- Test bundling AI Training Workshop with Software or Web Dev products to lift effective AOV from $1,716 to $2,500+.
-2. **Customer Cohort Analysis** -- As more months of data accumulate, build monthly acquisition cohorts to measure time-to-second-purchase and identify early retention signals.
-3. **Regional Pricing Experiment** -- Test whether East and West customers respond to Consulting offers, or whether the $0 cells reflect genuine lack of demand.
+7. **Join external socioeconomic data** — Overlay census income, transit coverage, and facility location data to test whether geographic deprivation indices predict neighbourhood-level no-show rates.
+8. **Test appointment-type effects** — If specialty or provider data can be obtained, add to the model — appointment type is likely a top-5 predictor based on healthcare literature.
+9. **Temporal expansion** — Acquire 12+ months of data to decompose seasonal patterns and test whether the system is on a long-term trend.
 
 ---
 
-## Appendix -- Individual Chart Insights
+## Appendix — Individual Chart Insights
 
 | # | Chart | Key Observation | Confidence |
 |---|-------|-----------------|------------|
-| 1 | cumulative_revenue.png | Near-linear $97.7K accumulation with May flattening; lumpy step-jumps from large deals | High |
-| 2 | discount_distribution.png | Tiered at 0/5/10/15/20%; Web Dev most discounted; Consulting stays premium at 0--5% | High |
-| 3 | monthly_revenue.png | March peak at ~$25K then two-month decline; April volume-revenue divergence | Medium |
-| 4 | order_status.png | 89.6% completion; 5 pending orders worth $10.2K; binary status model | High |
-| 5 | revenue_by_category.png | Web Dev + Software dual-pillar ($32K each, 65% total); Consulting highest AOV at $2,503 | High |
-| 6 | revenue_by_product.png | All 6 products have exactly 8 orders; Data Cleansing leads at $20K | High |
-| 7 | revenue_by_region.png | 4 regions within $22K--$27K (5.2% spread); balanced but undifferentiated | High |
-| 8 | revenue_heatmap.png | Two $0 cells: East/West have zero Consulting; hidden regional specialisations | High |
-| 9 | sales_rep_performance.png | $3.4K spread across reps; Sharma's 8.6% avg discount is the outlier | Medium |
-| 10 | top_customers.png | Zero repeat customers; top 10 at 34.8% of revenue; no concentration risk but no retention | High |
+| 1 | 01_age_distribution | Bimodal: pediatric spike (0-5, ~12K) + chronic-disease peak (50-60); median 37 | High |
+| 2 | 02_lead_days_distribution | 45% same-day; extreme right skew; mean 10.2d masks mode of 0 | High |
+| 3 | 03_noshow_overall | 20.2% overall (22,314 missed); 80/20 class imbalance | High |
+| 4 | 04_binary_flags_prevalence | SMS sent to 32%; Hypertension 19.7%; low-prevalence flags need caution | High |
+| 5 | 05_gender_split | 65/35 F/M; 2:1 ratio exceeds population demographics | High |
+| 6 | 06_top20_neighbourhoods | Jardim Camburi dominates (~7,700); top 3 = 16% of volume | High |
+| 7 | 07_appointments_by_weekday | Tue-Wed peak (47% of weekly volume); Thursday dip of 33% | High |
+| 8 | 08_appointments_over_time | Stable weekly sawtooth at 3,800-4,700/day; capacity ceiling | High |
+| 9 | 09_noshow_by_gender | Gender is a non-predictor: 20.3% F vs 20.0% M (0.3pp) | High |
+| 10 | 10_noshow_by_age_group | Clear age gradient: 11-20 peak 25.2%, 61-70 trough 14.7% | High |
+| 11 | 11_noshow_by_lead_days | #1 modifiable predictor: 4.6% same-day → 33.2% at 31-90d | High |
+| 12 | 12_noshow_by_sms | Simpson's paradox: SMS recipients 27.6% vs 16.7% — confounded | High (obs) / Low (causal) |
+| 13 | 13_noshow_by_conditions | Chronic conditions protective (-2-4pp); Scholarship +3.9pp | Medium |
+| 14 | 14_noshow_by_weekday | End-of-week rise: Sat 23.1%, Fri 21.2% vs Thu 19.3% | Medium |
+| 15 | 15_noshow_by_neighbourhood | 11pp spread across top 30; Itararé worst (~27%) | High |
+| 16 | 16_noshow_by_month | Month is a non-predictor: only 2.3pp range across Apr-Jun | Medium |
+| 17 | 17_repeat_patient_noshow | #1 predictor overall: 0% history → 17.5%, 51-75% → 39.7% | High |
+| 18 | 18_correlation_heatmap | Weak linear signals (max r=0.19); multicollinearity in Age/Hyp/Dia | High |
+| 19 | 19_sms_paradox | Paradox resolved: SMS reduces no-shows 6-8pp within strata | High |
+| 20 | 20_age_condition_heatmap | Hypertensive adolescents 35% — highest micro-segment rate | Medium |
+| 21 | 21_neighbourhood_inequality | Gini 0.138; extreme outliers from tiny samples (100% Trindade) | Medium |
+| 22 | 22_same_day_profile | Two populations: same-day (young, 5%) vs advance (older, 29%) | High |
+| 23 | 23_scholarship_analysis | Scholarship premium ~3.5pp persists across all neighbourhood terciles | High |
+| 24 | 24_patient_appointment_counts | Most patients 1-2 visits; 10+ visits = most reliable (16.5%) | Medium |
+| 25 | 25_weekly_noshow_timeseries | Inverted-V: peaks ~21.4% mid-May, declines to ~18.1% mid-June | Medium |
 
 ---
 
-## Appendix -- Input Inventory
+## Appendix — Input Inventory
 
 ### Images
 | File | Description inferred from content |
 |------|------------------------------------|
-| cumulative_revenue.png | Filled area chart of cumulative revenue over time (Jan--May 2025) |
-| discount_distribution.png | Stacked histogram of discount % by product category |
-| monthly_revenue.png | Dual-axis line+bar chart of monthly revenue and order count |
-| order_status.png | Donut chart showing Completed (89.6%) vs Pending (10.4%) orders |
-| revenue_by_category.png | Treemap of revenue split across 4 product categories |
-| revenue_by_product.png | Vertical bar chart of revenue per product, coloured by category |
-| revenue_by_region.png | Horizontal bar chart of revenue per region |
-| revenue_heatmap.png | 4x4 heatmap of revenue at the region x category intersection |
-| sales_rep_performance.png | Grouped bar chart of rep revenue and order count |
-| top_customers.png | Horizontal bar chart of top 10 customers by revenue |
+| 01_age_distribution.jpg | Histogram + KDE of patient age with median line |
+| 02_lead_days_distribution.jpg | Histogram of scheduling lead time, clipped at 120d |
+| 03_noshow_overall.jpg | Horizontal bar chart: attended vs no-show counts |
+| 04_binary_flags_prevalence.jpg | Bar chart of 6 binary flag prevalence rates |
+| 05_gender_split.jpg | Bar chart of appointment volume by gender |
+| 06_top20_neighbourhoods.jpg | Horizontal bar chart of top 20 neighbourhoods by volume |
+| 07_appointments_by_weekday.jpg | Bar chart of daily appointment volume Mon-Sat |
+| 08_appointments_over_time.jpg | Daily time series of appointment volume Apr-Jun 2016 |
+| 09_noshow_by_gender.jpg | No-show rate by gender with overall reference line |
+| 10_noshow_by_age_group.jpg | No-show rate across 9 age groups |
+| 11_noshow_by_lead_days.jpg | No-show rate across 5 lead-time buckets |
+| 12_noshow_by_sms.jpg | No-show rate by SMS status with confound annotation |
+| 13_noshow_by_conditions.jpg | 2×3 grid: no-show rate by 6 binary condition flags |
+| 14_noshow_by_weekday.jpg | No-show rate by day of week |
+| 15_noshow_by_neighbourhood.jpg | No-show rate for top 30 neighbourhoods, colour-coded |
+| 16_noshow_by_month.jpg | No-show rate by month (Apr, May, Jun) |
+| 17_repeat_patient_noshow.jpg | No-show rate by prior no-show history bucket |
+| 18_correlation_heatmap.jpg | 9×9 Pearson correlation matrix of features vs target |
+| 19_sms_paradox.jpg | Grouped bar: no-show by lead time × SMS status |
+| 20_age_condition_heatmap.jpg | Heatmap: no-show rate by age group × hypertension |
+| 21_neighbourhood_inequality.jpg | All 81 neighbourhoods ranked with Gini coefficient |
+| 22_same_day_profile.jpg | Dual-panel: age distributions + rate comparison for same-day vs advance |
+| 23_scholarship_analysis.jpg | Grouped bar: Scholarship effect by neighbourhood volume tercile |
+| 24_patient_appointment_counts.jpg | Dual-panel: visit frequency histogram + no-show rate by frequency |
+| 25_weekly_noshow_timeseries.jpg | Dual-axis: weekly no-show rate + volume time series |
+
+### Python Scripts
+| File | Purpose |
+|------|---------|
+| phase0_etl.py | Load raw CSV, parse dates, compute lead_days, remove dirty rows, engineer features, save clean.csv |
+| phase1_univariate.py | Generate plots 01-08: distributions of individual variables |
+| phase2_bivariate.py | Generate plots 09-18: no-show rate by each feature, correlation heatmap, summary stats |
+| phase3_multivariate.py | Generate plots 19-25: SMS paradox, age×condition, neighbourhood inequality, deep-dives |
+| phase4_report.py | Compile all outputs into self-contained HTML report with base64-embedded plots |
+| dashboard.py | Shiny for Python interactive dashboard with KPIs, gallery, explorer, and statistics tabs |

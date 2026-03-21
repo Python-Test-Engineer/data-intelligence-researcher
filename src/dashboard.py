@@ -1,11 +1,6 @@
 """
-Data Intelligence Dashboard — Shiny for Python
-Shiny-first: Plotly used only for interactive aggregated charts
-(dirty-row reasons bar chart, KPI numeric comparison chart).
-Auto-discovers the highest PROJECT_XX output folder.
+Shiny for Python dashboard — auto-discovers highest PROJECT_XX output folder.
 """
-
-from __future__ import annotations
 
 import base64
 import random
@@ -13,67 +8,44 @@ from pathlib import Path
 
 import pandas as pd
 from shiny import App, reactive, render, ui
+from shinywidgets import output_widget, render_widget
+import plotly.express as px
 
 # ---------------------------------------------------------------------------
-# Constants — resolved at startup
+# Resolve output folder
 # ---------------------------------------------------------------------------
 _candidates = sorted(Path("output").glob("PROJECT_*"))
-if not _candidates:
-    raise FileNotFoundError("No output/PROJECT_* folder found. Run the analysis phases first.")
-
 OUTPUT_DIR = _candidates[-1]
 PROJECT_NAME = OUTPUT_DIR.name
+
 PORT = random.randint(8000, 8999)
 
-CHARTS_DIR = OUTPUT_DIR / "charts"
-CLEAN_CSV = OUTPUT_DIR / "clean.csv"
-DIRTY_CSV = OUTPUT_DIR / "dirty.csv"
-SUMMARY_CSV = OUTPUT_DIR / "summary_stats.csv"
+# ---------------------------------------------------------------------------
+# Discover available files
+# ---------------------------------------------------------------------------
+PLOTS_DIR = OUTPUT_DIR / "plots"
 REPORT_HTML = OUTPUT_DIR / "report.html"
+SUMMARY_CSV = OUTPUT_DIR / "summary_stats.csv"
+DIRTY_CSV = OUTPUT_DIR / "dirty.csv"
+CLEAN_CSV = OUTPUT_DIR / "clean.csv"
 
-HAS_CHARTS = CHARTS_DIR.exists() and bool(list(CHARTS_DIR.glob("*.png")))
-HAS_CLEAN = CLEAN_CSV.exists()
-HAS_DIRTY = DIRTY_CSV.exists()
-HAS_SUMMARY = SUMMARY_CSV.exists()
-HAS_REPORT = REPORT_HTML.exists()
+plots = sorted(PLOTS_DIR.glob("*.png")) if PLOTS_DIR.exists() else []
+has_plots = len(plots) > 0
+has_report = REPORT_HTML.exists()
+has_summary = SUMMARY_CSV.exists()
+has_dirty = DIRTY_CSV.exists()
+has_clean = CLEAN_CSV.exists()
 
 # ---------------------------------------------------------------------------
 # Data loading
 # ---------------------------------------------------------------------------
-df_clean = pd.read_csv(CLEAN_CSV) if HAS_CLEAN else pd.DataFrame()
-df_dirty = pd.read_csv(DIRTY_CSV) if HAS_DIRTY else pd.DataFrame()
-df_summary = pd.read_csv(SUMMARY_CSV) if HAS_SUMMARY else pd.DataFrame()
-
-dirty_count = len(df_dirty)
-chart_count = len(list(CHARTS_DIR.glob("*.png"))) if HAS_CHARTS else 0
-
-
-def _kpi(name: str, default: str = "N/A") -> str:
-    if df_summary.empty:
-        return default
-    row = df_summary[df_summary["metric_name"] == name]
-    if row.empty:
-        return default
-    val = row.iloc[0]["metric_value"]
-    try:
-        fval = float(val)
-        if fval >= 1_000_000:
-            return f"${fval / 1_000_000:.1f}M"
-        if fval >= 1_000:
-            return f"${fval:,.0f}"
-        return f"{fval:,.2f}"
-    except (ValueError, TypeError):
-        return str(val)
-
-
-total_revenue = _kpi("total_revenue")
-order_count = _kpi("order_count")
-avg_order_value = _kpi("avg_order_value")
+df_summary = pd.read_csv(SUMMARY_CSV) if has_summary else pd.DataFrame()
+df_dirty = pd.read_csv(DIRTY_CSV) if has_dirty else pd.DataFrame()
+df_clean = pd.read_csv(CLEAN_CSV, nrows=5000) if has_clean else pd.DataFrame()
 
 # ---------------------------------------------------------------------------
-# Shiny-native helpers
+# Helpers
 # ---------------------------------------------------------------------------
-
 def encode_png(path: Path) -> str:
     return "data:image/png;base64," + base64.b64encode(path.read_bytes()).decode()
 
@@ -86,151 +58,225 @@ def kpi_card(title: str, value: str, icon: str = "bi-bar-chart-fill", color: str
             ui.p(title, class_="text-muted mb-0 small"),
             class_="card-body text-center py-3",
         ),
-        class_=f"card border-{color} shadow-sm mb-3",
-        style="border-width:2px;",
+        class_=f"card border-{color} mb-3 h-100",
     )
 
 
 # ---------------------------------------------------------------------------
-# Tab UI builders — Shiny-native throughout
+# Overview tab UI
 # ---------------------------------------------------------------------------
-
 def overview_ui():
-    """KPI cards + embedded report.html iframe."""
-    report_content = (
-        ui.tags.iframe(
-            src="/report.html",
-            style="width:100%;height:620px;border:1px solid #dee2e6;border-radius:6px;",
-        )
-        if HAS_REPORT
-        else ui.p("No report found.", class_="text-muted")
+    total_rows = 110521
+    dirty_rows = len(df_dirty) if has_dirty else 0
+
+    kpi_row = ui.row(
+        ui.column(3, kpi_card("Total Appointments", f"{total_rows:,}", "bi-calendar-check-fill", "primary")),
+        ui.column(3, kpi_card("Unique Patients", "62,298", "bi-people-fill", "info")),
+        ui.column(3, kpi_card("Overall No-Show Rate", "20.19%", "bi-x-circle-fill", "warning")),
+        ui.column(3, kpi_card("Dirty Rows Removed", str(dirty_rows), "bi-trash3-fill", "danger")),
     )
+
+    if has_report:
+        report_html_content = REPORT_HTML.read_text(encoding="utf-8", errors="replace")
+        # Embed as a sandboxed iframe using srcdoc
+        report_section = ui.div(
+            ui.h4("Project Report", class_="mt-4 mb-3"),
+            ui.tags.iframe(
+                srcdoc=report_html_content,
+                style="width:100%; height:680px; border:1px solid #555; border-radius:6px;",
+                sandbox="allow-scripts allow-same-origin",
+            ),
+            class_="mt-2",
+        )
+    else:
+        report_section = ui.p("No report.html found.", class_="text-muted mt-4")
 
     return ui.div(
-        ui.h4(f"{PROJECT_NAME} — Overview", class_="mb-4 mt-2"),
-        ui.row(
-            ui.column(3, kpi_card("Total Revenue", total_revenue, "bi-currency-dollar", "success")),
-            ui.column(3, kpi_card("Orders", order_count, "bi-bag-check-fill", "primary")),
-            ui.column(3, kpi_card("Avg Order Value", avg_order_value, "bi-receipt", "info")),
-            ui.column(3, kpi_card("Dirty Rows Removed", str(dirty_count), "bi-trash3-fill", "danger")),
-        ),
-        ui.row(
-            ui.column(3, kpi_card("Charts Generated", str(chart_count), "bi-image-fill", "warning")),
-        ),
+        ui.h3("Medical Appointment No-Show Analysis", class_="mb-1"),
+        ui.p("Brazil hospital appointments dataset — 110,527 records across 81 neighbourhoods in Vitoria, ES.", class_="text-muted mb-4"),
+        kpi_row,
         ui.hr(),
-        ui.h5("Narrative Report", class_="mb-3"),
-        report_content,
+        report_section,
         class_="p-3",
     )
 
 
-def gallery_ui():
-    """Responsive PNG grid — pure Shiny, base64 encoded images."""
-    if not HAS_CHARTS:
-        return ui.p("No charts found.", class_="text-muted p-3")
+# ---------------------------------------------------------------------------
+# Charts Gallery tab UI
+# ---------------------------------------------------------------------------
+CHART_LABELS = {
+    "01_age_distribution": "Age Distribution",
+    "02_lead_days_distribution": "Lead Days Distribution",
+    "03_noshow_overall": "No-Show Overall",
+    "04_binary_flags_prevalence": "Binary Flags Prevalence",
+    "05_gender_split": "Gender Split",
+    "06_top20_neighbourhoods": "Top 20 Neighbourhoods",
+    "07_appointments_by_weekday": "Appointments by Weekday",
+    "08_appointments_over_time": "Appointments Over Time",
+    "09_noshow_by_gender": "No-Show by Gender",
+    "10_noshow_by_age_group": "No-Show by Age Group",
+    "11_noshow_by_lead_days": "No-Show by Lead Days",
+    "12_noshow_by_sms": "No-Show by SMS",
+    "13_noshow_by_conditions": "No-Show by Conditions",
+    "14_noshow_by_weekday": "No-Show by Weekday",
+    "15_noshow_by_neighbourhood": "No-Show by Neighbourhood",
+    "16_noshow_by_month": "No-Show by Month",
+    "17_repeat_patient_noshow": "Repeat Patient No-Show",
+    "18_correlation_heatmap": "Correlation Heatmap",
+    "19_sms_paradox": "SMS Paradox",
+    "20_age_condition_heatmap": "Age × Condition Heatmap",
+    "21_neighbourhood_inequality": "Neighbourhood Inequality",
+    "22_same_day_profile": "Same-Day Profile",
+    "23_scholarship_analysis": "Scholarship Analysis",
+    "24_patient_appointment_counts": "Patient Appointment Counts",
+    "25_weekly_noshow_timeseries": "Weekly No-Show Time Series",
+}
 
-    pngs = sorted(CHARTS_DIR.glob("*.png"))
+
+def gallery_ui():
+    if not has_plots:
+        return ui.p("No PNG charts found in plots/.", class_="text-muted p-3")
+
     rows = []
-    for i in range(0, len(pngs), 3):
-        chunk = pngs[i: i + 3]
-        cols = [
-            ui.column(
-                4,
-                ui.div(
-                    ui.tags.img(
-                        src=encode_png(p),
-                        style="width:100%;border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,0.1);",
-                        alt=p.stem.replace("_", " ").title(),
-                    ),
-                    ui.p(
-                        p.stem.replace("_", " ").title(),
-                        class_="text-center small mt-1 mb-0 text-muted",
-                    ),
-                    class_="mb-4",
+    row_items = []
+    for i, p in enumerate(plots):
+        stem = p.stem
+        label = CHART_LABELS.get(stem, stem.replace("_", " ").title())
+        encoded = encode_png(p)
+        card = ui.column(
+            4,
+            ui.div(
+                ui.tags.img(
+                    src=encoded,
+                    style="width:100%; border-radius:4px; cursor:pointer;",
+                    title=label,
+                    **{"data-bs-toggle": "modal", "data-bs-target": f"#modal-{i}"},
                 ),
-            )
-            for p in chunk
-        ]
-        rows.append(ui.row(*cols))
+                ui.p(label, class_="text-center small mt-1 mb-0 text-muted"),
+                ui.tags.div(
+                    ui.tags.div(
+                        ui.tags.div(
+                            ui.tags.div(
+                                ui.tags.button(
+                                    ui.HTML("&times;"),
+                                    class_="btn-close btn-close-white",
+                                    **{"data-bs-dismiss": "modal"},
+                                ),
+                                class_="modal-header border-0 justify-content-end",
+                            ),
+                            ui.tags.div(
+                                ui.tags.img(src=encoded, style="width:100%; border-radius:4px;"),
+                                ui.tags.p(label, class_="text-center mt-2 text-muted"),
+                                class_="modal-body",
+                            ),
+                            class_="modal-content bg-dark",
+                        ),
+                        class_="modal-dialog modal-xl modal-dialog-centered",
+                    ),
+                    class_="modal fade",
+                    id=f"modal-{i}",
+                    tabindex="-1",
+                ),
+                class_="mb-4",
+            ),
+        )
+        row_items.append(card)
+        if len(row_items) == 3:
+            rows.append(ui.row(*row_items))
+            row_items = []
+
+    if row_items:
+        rows.append(ui.row(*row_items))
 
     return ui.div(
-        ui.h4("Charts Gallery", class_="mb-4 mt-2"),
+        ui.h4(f"{len(plots)} Charts", class_="mb-1"),
+        ui.p("Click any chart to expand it in full size.", class_="text-muted small mb-4"),
         *rows,
         class_="p-3",
     )
 
 
+# ---------------------------------------------------------------------------
+# Data Tables tab UI
+# ---------------------------------------------------------------------------
 def tables_ui():
-    """Data tables — pure Shiny DataGrid with filtering."""
     panels = []
-    if HAS_CLEAN:
-        panels.append(ui.nav_panel("Clean Data", ui.output_data_frame("tbl_clean")))
-    if HAS_DIRTY:
-        panels.append(ui.nav_panel("Dirty Rows", ui.output_data_frame("tbl_dirty")))
+
+    if has_clean:
+        panels.append(
+            ui.nav_panel(
+                "Clean Data (first 5,000 rows)",
+                ui.output_data_frame("tbl_clean"),
+            )
+        )
+    if has_summary:
+        panels.append(
+            ui.nav_panel(
+                "Summary Stats",
+                ui.output_data_frame("tbl_summary"),
+            )
+        )
+    if has_dirty:
+        panels.append(
+            ui.nav_panel(
+                "Dirty Rows",
+                ui.output_data_frame("tbl_dirty"),
+            )
+        )
+
     if not panels:
         return ui.p("No CSV files found.", class_="text-muted p-3")
+
     return ui.div(
-        ui.h4("Data Tables", class_="mb-4 mt-2"),
         ui.navset_tab(*panels, id="data_tabs"),
         class_="p-3",
     )
 
 
+# ---------------------------------------------------------------------------
+# Statistics tab UI
+# ---------------------------------------------------------------------------
 def statistics_ui():
-    """Summary stats DataGrid (Shiny). Plotly bar chart only for numeric KPI comparison."""
-    if not HAS_SUMMARY:
+    if not has_summary:
         return ui.p("No summary_stats.csv found.", class_="text-muted p-3")
-
-    # Check whether there are enough numeric KPI rows to justify a chart
-    kpi_rows = df_summary[df_summary["table"] == "kpis"].copy() if not df_summary.empty else pd.DataFrame()
-    kpi_rows["_num"] = pd.to_numeric(kpi_rows["metric_value"], errors="coerce")
-    numeric_kpis = kpi_rows.dropna(subset=["_num"])
-    show_chart = len(numeric_kpis) >= 3  # only add Plotly chart if there's meaningful data
-
-    chart_section = []
-    if show_chart:
-        from shinywidgets import output_widget  # deferred — only imported when needed
-        chart_section = [output_widget("stats_chart"), ui.hr()]
-
     return ui.div(
-        ui.h4("Summary Statistics", class_="mb-4 mt-2"),
-        *chart_section,
-        ui.output_data_frame("tbl_summary"),
+        ui.h4("Summary Statistics", class_="mb-3"),
+        ui.row(
+            ui.column(5, ui.output_data_frame("tbl_stats_full")),
+            ui.column(7, output_widget("chart_stats")),
+        ),
         class_="p-3",
     )
 
 
+# ---------------------------------------------------------------------------
+# Dirty Data tab UI
+# ---------------------------------------------------------------------------
 def dirty_ui():
-    """Dirty data: Plotly bar chart of reasons + Shiny DataGrid."""
-    if not HAS_DIRTY:
+    if not has_dirty:
         return ui.p("No dirty.csv found.", class_="text-muted p-3")
-
-    from shinywidgets import output_widget  # deferred — only imported when needed
     return ui.div(
-        ui.h4("Dirty Data Analysis", class_="mb-4 mt-2"),
-        output_widget("dirty_chart"),
-        ui.hr(),
-        ui.output_data_frame("tbl_dirty2"),
+        ui.h4("Removed Rows Analysis", class_="mb-3"),
+        ui.row(
+            ui.column(5, output_widget("chart_dirty_reasons")),
+            ui.column(7, ui.output_data_frame("tbl_dirty_full")),
+        ),
         class_="p-3",
     )
 
-
-# ---------------------------------------------------------------------------
-# Assemble nav panels
-# ---------------------------------------------------------------------------
-_nav_panels = [
-    ui.nav_panel("Overview", overview_ui()),
-    ui.nav_panel("Charts Gallery", gallery_ui()),
-    ui.nav_panel("Data Tables", tables_ui()),
-]
-if HAS_SUMMARY:
-    _nav_panels.append(ui.nav_panel("Statistics", statistics_ui()))
-if HAS_DIRTY:
-    _nav_panels.append(ui.nav_panel("Dirty Data", dirty_ui()))
 
 # ---------------------------------------------------------------------------
 # App UI
 # ---------------------------------------------------------------------------
+nav_panels = [ui.nav_panel("Overview", overview_ui())]
+if has_plots:
+    nav_panels.append(ui.nav_panel("Charts Gallery", gallery_ui()))
+nav_panels.append(ui.nav_panel("Data Tables", tables_ui()))
+if has_summary:
+    nav_panels.append(ui.nav_panel("Statistics", statistics_ui()))
+if has_dirty:
+    nav_panels.append(ui.nav_panel("Dirty Data", dirty_ui()))
+
 app_ui = ui.page_navbar(
     ui.head_content(
         ui.tags.link(
@@ -239,8 +285,11 @@ app_ui = ui.page_navbar(
         ),
         ui.output_ui("theme_link"),
     ),
-    *_nav_panels,
-    title=f"{PROJECT_NAME} — Data Intelligence",
+    *nav_panels,
+    title=ui.span(
+        ui.tags.i(class_="bi bi-activity me-2"),
+        f"{PROJECT_NAME} — Data Intelligence",
+    ),
     header=ui.div(
         ui.output_ui("toggle_icon", inline=True),
         ui.input_action_button(
@@ -252,8 +301,7 @@ app_ui = ui.page_navbar(
         style="display:flex; align-items:center; margin-left:auto; padding-right:1rem;",
     ),
     id="navbar",
-    bg="#f8f9fa",
-    inverse=False,  # light navbar to match light-mode default
+    inverse=True,
 )
 
 
@@ -261,8 +309,7 @@ app_ui = ui.page_navbar(
 # Server
 # ---------------------------------------------------------------------------
 def server(input, output, session):
-    # Start in LIGHT mode
-    theme_dark = reactive.Value(False)
+    theme_dark = reactive.Value(True)
 
     @reactive.effect
     @reactive.event(input.toggle_theme)
@@ -271,108 +318,115 @@ def server(input, output, session):
 
     @render.ui
     def theme_link():
-        href = (
-            "https://cdn.jsdelivr.net/npm/bootswatch@5.3.3/dist/darkly/bootstrap.min.css"
-            if theme_dark.get()
-            else "https://cdn.jsdelivr.net/npm/bootswatch@5.3.3/dist/flatly/bootstrap.min.css"
-        )
+        if theme_dark.get():
+            href = "https://cdn.jsdelivr.net/npm/bootswatch@5.3.3/dist/darkly/bootstrap.min.css"
+        else:
+            href = "https://cdn.jsdelivr.net/npm/bootswatch@5.3.3/dist/flatly/bootstrap.min.css"
         return ui.tags.link(rel="stylesheet", href=href)
 
     @render.ui
     def toggle_icon():
-        icon = "bi-sun-fill" if theme_dark.get() else "bi-moon-fill"
-        color = "#f0ad4e" if theme_dark.get() else "#333"
-        return ui.tags.i(class_=f"bi {icon}", style=f"font-size:1.3rem; color:{color};")
+        if theme_dark.get():
+            return ui.tags.i(class_="bi bi-sun-fill", style="font-size:1.3rem; color:#ffd700;")
+        return ui.tags.i(class_="bi bi-moon-fill", style="font-size:1.3rem; color:#aaa;")
 
-    # --- Data Tables (Shiny-native) ---
-    if HAS_CLEAN:
-        @render.data_frame
-        def tbl_clean():
-            return render.DataGrid(df_clean, filters=True, height="500px")
+    # --- Data Tables ---
+    @render.data_frame
+    def tbl_clean():
+        return render.DataGrid(df_clean, filters=True, height="500px")
 
-    if HAS_DIRTY:
-        @render.data_frame
-        def tbl_dirty():
-            return render.DataGrid(df_dirty, filters=True)
+    @render.data_frame
+    def tbl_summary():
+        return render.DataGrid(df_summary, filters=True)
 
-        @render.data_frame
-        def tbl_dirty2():
-            return render.DataGrid(df_dirty, filters=True)
+    @render.data_frame
+    def tbl_dirty():
+        return render.DataGrid(df_dirty, filters=True)
 
     # --- Statistics ---
-    if HAS_SUMMARY:
-        @render.data_frame
-        def tbl_summary():
-            return render.DataGrid(df_summary, filters=True, height="400px")
+    @render.data_frame
+    def tbl_stats_full():
+        return render.DataGrid(df_summary)
 
-        # Plotly chart: only rendered when there are enough numeric KPIs to justify it
-        kpi_rows = df_summary[df_summary["table"] == "kpis"].copy()
-        kpi_rows["_num"] = pd.to_numeric(kpi_rows["metric_value"], errors="coerce")
-        numeric_kpis = kpi_rows.dropna(subset=["_num"])
-        if len(numeric_kpis) >= 3:
-            from shinywidgets import render_widget
-            import plotly.express as px
+    @render_widget
+    def chart_stats():
+        df = df_summary.copy()
+        df.columns = ["metric", "value"]
+        numeric_rows = []
+        for _, row in df.iterrows():
+            try:
+                v = float(str(row["value"]).replace(",", "").replace("%", ""))
+                numeric_rows.append({"metric": row["metric"], "value": v})
+            except Exception:
+                pass
+        if not numeric_rows:
+            return px.bar(title="No numeric data")
+        df_num = pd.DataFrame(numeric_rows)
+        rate_rows = df_num[df_num["metric"].str.contains("rate|%|mean|median", case=False, na=False)]
+        if len(rate_rows) < 2:
+            rate_rows = df_num.head(10)
+        fig = px.bar(
+            rate_rows,
+            x="value",
+            y="metric",
+            orientation="h",
+            title="Key Metrics at a Glance",
+            labels={"value": "Value", "metric": ""},
+            color="value",
+            color_continuous_scale="Teal",
+        )
+        fig.update_layout(
+            template="plotly_dark" if theme_dark.get() else "plotly_white",
+            height=420,
+            margin=dict(l=10, r=10, t=40, b=10),
+            coloraxis_showscale=False,
+            yaxis=dict(tickfont=dict(size=10)),
+        )
+        return fig
 
-            @render_widget
-            def stats_chart():
-                template = "plotly_dark" if theme_dark.get() else "plotly_white"
-                fig = px.bar(
-                    numeric_kpis,
-                    x="metric_name",
-                    y="_num",
-                    color="_num",
-                    color_continuous_scale="Blues",
-                    title="Key Performance Indicators",
-                    labels={"metric_name": "Metric", "_num": "Value"},
-                    template=template,
-                )
-                fig.update_layout(coloraxis_showscale=False, xaxis_tickangle=-30)
-                return fig
+    # --- Dirty Data ---
+    @render.data_frame
+    def tbl_dirty_full():
+        return render.DataGrid(df_dirty, filters=True)
 
-    # --- Dirty Data: Plotly bar chart of removal reasons ---
-    if HAS_DIRTY:
-        from shinywidgets import render_widget
-        import plotly.express as px
-        import plotly.graph_objects as go
-
-        @render_widget
-        def dirty_chart():
-            template = "plotly_dark" if theme_dark.get() else "plotly_white"
-            if "reason" not in df_dirty.columns or df_dirty.empty:
-                fig = go.Figure()
-                fig.update_layout(title="No dirty-row reason data", template=template)
-                return fig
-
-            reasons = (
-                df_dirty["reason"]
-                .str.split(";")
-                .explode()
-                .str.strip()
-                .value_counts()
-                .reset_index()
-            )
-            reasons.columns = ["reason", "count"]
-            fig = px.bar(
-                reasons,
-                x="count",
-                y="reason",
-                orientation="h",
-                title=f"Dirty Row Removal Reasons ({dirty_count} rows removed)",
-                labels={"count": "Count", "reason": "Reason"},
-                color="count",
-                color_continuous_scale="Reds",
-                template=template,
-            )
-            fig.update_layout(
-                coloraxis_showscale=False,
-                yaxis={"categoryorder": "total ascending"},
-            )
-            return fig
+    @render_widget
+    def chart_dirty_reasons():
+        if df_dirty.empty:
+            return px.bar(title="No dirty data")
+        df = df_dirty.copy()
+        reason_col = "reason" if "reason" in df.columns else df.columns[-1]
+        counts = df[reason_col].value_counts().reset_index()
+        counts.columns = ["reason", "count"]
+        fig = px.bar(
+            counts,
+            x="count",
+            y="reason",
+            orientation="h",
+            title="Removed Rows by Reason",
+            labels={"count": "Rows", "reason": ""},
+            color="count",
+            color_continuous_scale="Reds",
+        )
+        fig.update_layout(
+            template="plotly_dark" if theme_dark.get() else "plotly_white",
+            height=300,
+            margin=dict(l=10, r=10, t=40, b=10),
+            coloraxis_showscale=False,
+        )
+        return fig
 
 
-app = App(app_ui, server, static_assets=str(OUTPUT_DIR.resolve()))
+# ---------------------------------------------------------------------------
+# Entry point
+# ---------------------------------------------------------------------------
+app = App(app_ui, server)
 
 if __name__ == "__main__":
     import uvicorn
-    print(f"Starting dashboard on http://127.0.0.1:{PORT}")
+
+    print(f"\n  Dashboard : http://127.0.0.1:{PORT}")
+    print(f"  Project   : {PROJECT_NAME}")
+    print(f"  Charts    : {len(plots)}")
+    print(f"  Output    : {OUTPUT_DIR}\n")
+
     uvicorn.run(app, host="127.0.0.1", port=PORT)
